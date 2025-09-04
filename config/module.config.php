@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * IIIF Search Carousel module configuration.
  */
 
 declare(strict_types=1);
