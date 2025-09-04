@@ -1,0 +1,89 @@
+<?php
+// $rows, $ratio, $duration, $blockId, $customCss, $resourceTargets, $trimTop, $trimRight, $trimBottom, $trimLeft, $showSearch
+// Resource targets: items / media / item_sets
+$controllerMap = [
+  'items' => 'item',
+  'media' => 'media',
+  'item_sets' => 'item-set',
+];
+$initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
+$controller = $controllerMap[$initialTarget] ?? 'item';
+$searchAction = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
+$searchValue = $this->escapeHtml($this->params()->fromQuery('search', ''));
+
+// Helper: format a percentage with up to 1 decimal without trailing .0
+$__fmtPct = function ($v) {
+  $v = (float) $v;
+  $s = number_format($v, 1, '.', '');
+  if (substr($s, -2) === '.0') {
+    return substr($s, 0, -2);
+  }
+  return $s;
+};
+
+// Precompute region if any trim set
+$__hasTrim = ($trimTop > 0 || $trimRight > 0 || $trimBottom > 0 || $trimLeft > 0);
+$__region = null;
+if ($__hasTrim) {
+  $x = max(0.0, (float) $trimLeft);
+  $y = max(0.0, (float) $trimTop);
+  $w = max(0.1, 100.0 - (float) $trimLeft - (float) $trimRight);
+  $h = max(0.1, 100.0 - (float) $trimTop - (float) $trimBottom);
+  $__region = 'pct:' . $__fmtPct($x) . ',' . $__fmtPct($y) . ',' . $__fmtPct($w) . ',' . $__fmtPct($h);
+}
+?>
+<section class="iiif-sc" id="iiif-sc-<?php echo (int) $blockId; ?>">
+  <?php if (!empty($customCss)): ?>
+    <style>
+      /* Custom CSS for #iiif-sc-<?php echo (int) $blockId; ?> */
+<?php echo $customCss; ?>
+    </style>
+  <?php endif; ?>
+  <div class="iiif-sc__bg" style="aspect-ratio: <?php echo $this->escapeHtml($ratio); ?>">
+    <?php foreach ($rows as $i => $r): ?>
+      <?php
+        $imgUrl = $r['image_url'] ?? '';
+        if ($__hasTrim && is_string($imgUrl) && $imgUrl !== '') {
+          // Replace the region segment '/full/' with '/pct:x,y,w,h/'.
+          // Be conservative: only replace the first occurrence of '/full/'.
+          $pos = strpos($imgUrl, '/full/');
+          if ($pos !== false) {
+            $imgUrl = substr($imgUrl, 0, $pos + 1) . $__region . '/' . substr($imgUrl, $pos + 6);
+          }
+        }
+      ?>
+      <?php
+        $href = !empty($r['related_url']) ? $r['related_url'] : null;
+        if (is_string($href)) {
+          if (strpos($href, 'omeka:media:') === 0) {
+            $id = (int) substr($href, strlen('omeka:media:'));
+            $href = $this->url('site/resource', ['controller' => 'media', 'action' => 'show', 'id' => $id], true);
+          }
+          elseif (strpos($href, 'omeka:item:') === 0) {
+            $id = (int) substr($href, strlen('omeka:item:'));
+            $href = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
+          }
+        }
+      ?>
+      <a class="iiif-sc__slide<?php if ($i === 0) echo ' is-active'; ?>"<?php if ($href): ?> href="<?php echo $this->escapeHtml($href); ?>"<?php endif; ?> aria-label="<?php echo $this->escapeHtml($r['label'] ?? ''); ?>">
+        <img src="<?php echo $this->escapeHtml($imgUrl); ?>" alt="" loading="eager" decoding="async">
+        <?php if (!empty($r['label'])): ?>
+          <span class="iiif-sc__caption">
+            <?php echo $this->escapeHtml($r['label']); ?>
+          </span>
+        <?php endif; ?>
+      </a>
+    <?php endforeach; ?>
+  </div>
+
+  <?php if (!empty($showSearch)): ?>
+    <div class="iiif-sc__overlay">
+      <form class="iiif-sc__search" method="get" action="<?php echo $searchAction; ?>">
+        <input type="search" id="iiif-sc-search-<?php echo (int) $blockId; ?>" name="search" value="<?php echo $searchValue; ?>" placeholder="Search..." aria-label="Search">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  <?php endif; ?>
+
+  <script>window.IIIF_SC_DURATION=<?php echo (int) $duration; ?>;</script>
+</section>

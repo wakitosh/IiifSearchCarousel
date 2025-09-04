@@ -1,0 +1,13 @@
+<?php
+$this->headTitle('IIIF Search Carousel');
+?>
+<div class="iiif-sc-admin">
+  <h1>IIIF Search Carousel</h1>
+  <p>Settings for the search textbox with background carousel.</p>
+  <?php echo $this->form()->openTag($form); ?>
+    <?php echo $this->formCollection($form, false); ?>
+  <?php echo $this->form()->closeTag(); ?>
+  <p>
+    <a class="button" href="<?php echo $this->url('iiif-search-carousel-admin/rebuild'); ?>">Rebuild now</a>
+  </p>
+</div>

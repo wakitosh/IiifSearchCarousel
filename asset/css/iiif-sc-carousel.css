@@ -1,0 +1,10 @@
+.iiif-sc{position:relative;}
+.iiif-sc__bg{position:relative;overflow:hidden;background:#111;color:#fff}
+.iiif-sc__slide{position:absolute;inset:0;opacity:0;transition:opacity .8s ease;display:block;color:inherit;text-decoration:none;pointer-events:none}
+.iiif-sc__slide.is-active{opacity:1;pointer-events:auto}
+.iiif-sc__slide img{width:100%;height:100%;object-fit:cover;display:block}
+.iiif-sc__caption{position:absolute;left:1rem;bottom:1rem;background:rgba(0,0,0,.4);padding:.5rem .75rem;border-radius:.25rem;color:#fff}
+.iiif-sc__overlay{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.iiif-sc__search{pointer-events:auto;background:rgba(255,255,255,.9);padding:1rem;border-radius:.5rem;display:flex;gap:.5rem}
+.iiif-sc__search input{min-width:22rem;padding:.5rem}
+.iiif-sc__search button{padding:.5rem .75rem}
