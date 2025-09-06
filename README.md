@@ -1,113 +1,225 @@
 # IIIF Search Carousel
 
-A simple Omeka S module that provides a page block with a full-width image carousel (sourced from IIIF manifests) and a search box overlay. Supports multi-target search (Items, Media, Item sets), auto-rotation, optional auto-rebuild of the image pool, and per-block IIIF Image API trimming by percentage (top/right/bottom/left).
+A versatile Omeka S module that provides a site page block with a full-width image carousel, built from a pool of IIIF manifests, and an overlaid search box.
 
-- Omeka S: 4.x
-- License: GPL-3.0-or-later
+It features multi-target search, auto-rotation, optional auto-rebuild of the image pool, and per-block image trimming via the IIIF Image API. The module intelligently selects canvases based on configurable rules and extracts related links, including direct links to Omeka S resources.
+
+- **Omeka S compatibility:** 4.x
+- **License:** GPL-3.0-or-later
 
 ## Features
 
-- Background carousel built from IIIF manifest(s)
-- Search overlay that uses the native browse route `search` parameter
-- Multi-target search (Items / Media / Item sets) as checkboxes in the block form
-- Per-block custom CSS (scoped via unique block id)
-- Auto-rotation interval (site setting)
-- Optional auto-rebuild of image pool on front-end page views (interval-based)
-- Per-block trimming using IIIF Image API `pct:x,y,w,h` region derived from top/right/bottom/left percentages
+- **Dynamic Background Carousel:** Displays a full-width carousel of images sourced from one or more IIIF manifests.
+- **Overlay Search Box:** Provides a clean search interface on top of the carousel.
+    - **Multi-Target Search:** Configure searches across Items, Media, and/or Item Sets.
+    - **Show/Hide Option:** The search box can be hidden for a display-only carousel.
+- **Advanced Image Control:**
+    - **Flexible Canvas Selection:** Use powerful rules to select which canvas to display from a manifest (e.g., "the 2nd canvas," "a random canvas from the 3rd to the last-but-one").
+    - **IIIF Image Trimming:** Trim images by percentage from any side (top, right, bottom, left) using the `pct:x,y,w,h` region parameter of the IIIF Image API.
+- **Smart Link Extraction:** Automatically finds the best "related URL" for an image, prioritizing `homepage`, `seeAlso`, and even detecting links to Omeka S items/media (e.g., `/items/123`).
+- **Automated Image Pool Management:**
+    - **Manual & Auto Rebuild:** Rebuild the image pool manually from the admin dashboard or enable periodic, interval-based automatic rebuilds triggered by site visits.
+- **Customization:**
+    - **Aspect Ratio Control:** Set a fixed (1:1, 4:3, 16:9) or custom aspect ratio for the carousel.
+    - **Per-Block Custom CSS:** Apply custom CSS scoped to each individual block.
 
 ## Installation
 
-1. Place the module directory `IiifSearchCarousel` under Omeka S `modules/`.
-2. Enable the module in Omeka S admin.
-3. Configure module settings at: Admin → IIIF Search Carousel.
+1.  Download the module and place the `IiifSearchCarousel` directory in your Omeka S `modules/` folder.
+2.  Log in to your Omeka S admin panel, navigate to **Modules**, and activate "IIIF Search Carousel".
+3.  Configure the module's global settings by navigating to **IIIF Search Carousel** in the left-hand admin menu.
 
-## Configuration (Admin)
+## Configuration
 
-- Number of images: how many images to keep in the pool.
-- Carousel duration: seconds per slide for auto-rotation.
-- Image size: pixel width for building IIIF Image API URLs.
-- Aspect ratio: choose 1:1, 4:3, 16:9, or custom (W/H).
-- Selection rules: simple rule lines to pick canvases across manifests.
-- Manifest URLs: one per line.
-- Auto rebuild: enable and interval (minutes). When enabled, the module triggers a rebuild job on front-end render if the interval has elapsed.
+Configuration is split into two levels: global settings for the entire site and per-block settings for each instance of the carousel.
 
-## Page Block (Site → Pages)
+### Global Settings (Admin Dashboard)
 
-Add block: "IIIF Search Carousel".
+These settings control the default behavior and image pool for all carousels. Access them from the **IIIF Search Carousel** menu.
 
-- Search targets: choose one or more of Items / Media / Item sets (checkboxes).
-- Custom CSS (scoped): CSS applied only to this block. The block gets a unique id `#iiif-sc-<id>`.
-- Trim top/right/bottom/left (%): percentages used to compute an Image API `pct:` region replacing `/full/`.
+- **Number of images:** The total number of images to fetch and keep in the image pool.
+- **Carousel duration:** The time (in seconds) each slide is displayed before auto-rotating.
+- **IIIF image size:** The width (in pixels) to request from the IIIF Image API (e.g., `1600`).
+- **Aspect ratio:** The aspect ratio for the carousel container. Choose a preset or "Custom" to define your own width and height ratio.
+- **Selection rules:** Define rules to pick a canvas from a manifest based on the number of canvases it contains. See the "Canvas Selection Rules" section below for details.
+- **Manifest URLs:** A list of IIIF manifest URLs, one per line. The module will fetch images from these sources.
+- **Auto rebuild:**
+    - **Enable:** Check to enable automatic image pool rebuilding.
+    - **Interval:** Set the minimum interval (in minutes) between automatic rebuilds. This is a "poor-man's cron" triggered on page visits.
 
-Front-end behavior:
+### Block Settings (Site Page Editor)
 
-- The carousel rotates automatically. Clicking an image opens the related URL (if present in the manifest).
-- The search form posts to the selected resource's browse route using the `search` parameter (substring match across properties).
-- If multiple search targets are configured, the search overlay respects those targets on submit (no front-end selector needed).
+When you add a "IIIF Search Carousel" block to a site page, you can override or specify settings for that specific instance.
 
-Selection rules:
-- Define rules like `1 => 1`, `2 => 2`, `5+ => random(3-last-1)`. Unicode dashes and spaces are accepted (e.g., `3 - last - 1`). The first matching rule applies; otherwise a full random fallback is used.
+- **Search targets:** Check the resource types (Items, Media, Item sets) this block's search box should query.
+- **Show search box:** Uncheck this to hide the search box and use the block as a purely decorative image carousel.
+- **Custom CSS (scoped):** Add CSS rules that will only apply to this block. A unique ID selector (e.g., `#iiif-sc-123`) is provided for easy scoping.
+- **Trim (top, right, bottom, left) (%):** Specify a percentage to trim from each side of the image. For example, setting "Trim top" to `10` will cut off the top 10% of the image. This uses the IIIF Image API's `pct:` region parameter.
 
-## Known limitations
+## Advanced Features
 
-- The auto-rebuild trigger is best-effort and runs on page render; heavy rebuilds should be scheduled via cron in production.
-- Carousel images depend on IIIF endpoints’ availability and performance.
+### Canvas Selection Rules
 
-## Development
+The "Selection rules" allow you to precisely control which canvas is chosen from a manifest. The module applies the first matching rule. If no rules match, a random canvas is selected as a fallback.
 
-- Table: `iiif_sc_images` stores image_url, manifest_url, related_url, label, position, created.
-- Job: `RebuildImagesJob` fetches manifests (IIIF v2/v3), builds image URLs, and populates the table.
-- Block: `SearchCarouselBlock` renders the carousel, search overlay, and exposes block settings.
+**Format:** `CONDITION => ACTION` (one rule per line)
+
+-   **CONDITION:**
+    -   `N`: Matches if the manifest has exactly `N` canvases.
+    -   `A-B`: Matches if the canvas count is between `A` and `B` (inclusive).
+    -   `N+`: Matches if the canvas count is `N` or more.
+-   **ACTION:**
+    -   `N`: Selects the Nth canvas (1-based index).
+    -   `last`: Selects the last canvas.
+    -   `random`: Selects a random canvas from all available.
+    -   `random(A-B)`: Selects a random canvas between the Ath and Bth (inclusive, 1-based).
+    -   `random(A-last-O)`: Selects a random canvas from the Ath to the last, minus an offset `O`. For example, `random(2-last-1)` selects from the 2nd canvas to the second-to-last.
+
+**Example Rules:**
+
+```
+1 => 1
+2 => 2
+3-5 => random(2-last)
+6+ => random(3-last-1)
+```
+
+-   If a manifest has 1 canvas, select the 1st.
+-   If it has 2 canvases, select the 2nd.
+-   If it has 3 to 5, select a random one from the 2nd to the last.
+-   If it has 6 or more, select a random one from the 3rd to the second-to-last.
+
+### Smart Related URL Extraction
+
+When an image is clicked, the user is taken to a "related URL." The module intelligently extracts this URL from the manifest data with the following priority:
+
+1.  **Omeka S Resource Link (from Service/Image URL):** Detects URLs pointing to Omeka S media (e.g., `/iiif/3/456`) and creates a direct link (`omeka:media:456`).
+2.  **Canvas-level Links:**
+    -   `homepage` (v3)
+    -   `seeAlso` (v3)
+    -   `related` (v2)
+    -   The canvas's own URI (`id`).
+3.  **Manifest-level Links:**
+    -   Detects Omeka S item manifest URLs (e.g., `/item/123/manifest`) and links to the item (`omeka:item:123`).
+    -   `homepage` (v3)
+    -   `related` (v2)
+4.  **Fallback:** The manifest URL itself.
+
+## Known Limitations
+
+-   The auto-rebuild feature is triggered by user visits and is not a substitute for a true cron job. For mission-critical, frequent updates, consider triggering the rebuild job via a system cron task.
+-   Carousel performance depends on the speed and availability of the remote IIIF image servers.
 
 ---
 
-# IIIF サーチ・カルーセル（日本語）
+# IIIF サーチ・カルーセル (IiifSearchCarousel)
 
-IIIF マニフェストから画像を取得して背景カルーセルを作り、その上に検索ボックスを重ねて表示する Omeka S 用のブロックを提供します。検索対象（アイテム／メディア／アイテムセット）の複数選択、スライドの自動ローテーション、画像プールの自動リビルド、上下左右のパーセント指定トリミングに対応しています。
+IIIFマニフェストから取得した画像で構成される全幅の画像カルーセルと、その上に重ねて表示される検索ボックスを、サイトのページブロックとして提供する多機能なOmeka Sモジュールです。
 
-- 対応 Omeka S: 4.x
-- ライセンス: GPL-3.0-or-later
+複数リソースを対象とした検索、スライドの自動回転、画像プールの自動リビルド、IIIF Image APIを利用したブロック単位での画像トリミングに対応しています。また、設定可能なルールに基づいて表示するキャンバスを賢く選択し、Omeka S内部リソースへの直接リンクを含む関連リンクを自動で抽出します。
 
-## 特長
+- **Omeka S互換性:** 4.x
+- **ライセンス:** GPL-3.0-or-later
 
-- IIIF マニフェストから背景カルーセルを構築
-- `search` クエリ（browse ルート）を使ったシンプルな全文検索風の入力
-- 検索対象の複数選択（アイテム／メディア／アイテムセット）
-- ブロック単位のカスタム CSS（ブロック id でスコープ）
-- 自動ローテーション間隔を設定可能
-- 表示時に一定間隔で画像プールの自動リビルド（任意）
-- ブロック単位で上下左右のトリミング幅（%）を設定、Image API の `pct:` 領域を使用
+## 主な機能
+
+- **動的な背景カルーセル:** 複数のIIIFマニフェストをソースとして、全幅の画像カルーセルを表示します。
+- **オーバーレイ検索ボックス:** カルーセルの上にシンプルな検索インターフェースを提供します。
+    - **複数対象検索:** アイテム、メディア、アイテムセットを横断して検索するよう設定できます。
+    - **表示/非表示オプション:** 検索ボックスを非表示にして、ディスプレイ専用のカルーセルとしても利用可能です。
+- **高度な画像コントロール:**
+    - **柔軟なキャンバス選択:** 「2枚目のキャンバス」「3枚目から最後から2枚目までのうちランダムな1枚」など、マニフェストからどのキャンバスを表示するかを強力なルールで指定できます。
+    - **IIIF画像トリミング:** IIIF Image APIの`pct:x,y,w,h`領域パラメータを利用して、画像の上下左右をパーセンテージでトリミングできます。
+- **スマートなリンク抽出:** 画像に最適な「関連URL」を自動で発見します。`homepage`や`seeAlso`を優先し、Omeka Sのアイテムやメディアへのリンク（例: `/items/123`）も検出します。
+- **画像プールの自動管理:**
+    - **手動＆自動リビルド:** 管理画面から手動で画像プールを再構築できるほか、サイトへの訪問をトリガーとした、一定間隔での自動リビルドも設定可能です。
+- **カスタマイズ:**
+    - **アスペクト比制御:** 固定（1:1, 4:3, 16:9）またはカスタムのアスペクト比をカルーセルに設定できます。
+    - **ブロック単位のカスタムCSS:** 個々のブロックにのみ適用されるカスタムCSSを追加できます。
 
 ## インストール
 
-1. モジュール `IiifSearchCarousel` を Omeka S の `modules/` に配置。
-2. 管理画面で有効化。
-3. 設定は 管理 → IIIF Search Carousel から行います。
+1.  モジュールをダウンロードし、`IiifSearchCarousel`ディレクトリをOmeka Sの`modules/`フォルダに配置します。
+2.  Omeka Sの管理パネルにログインし、**モジュール**に移動して「IIIF Search Carousel」を有効化します。
+3.  左側の管理メニューから**IIIF Search Carousel**に移動し、モジュールの全体設定を行います。
 
-## 設定（管理画面）
+## 設定
 
-- 画像数、スライド時間、画像サイズ、アスペクト比（既定 or 指定）、選択ルール、マニフェスト URL 群。
-- 自動リビルド（有効化＋間隔）。フロント表示時に間隔経過でジョブを投げます。
+設定は、サイト全体に適用される「全体設定」と、カルーセルの各インスタンスに適用される「ブロック単位設定」の2つのレベルに分かれています。
 
-## ページブロック（サイト → ページ）
+### 全体設定（管理ダッシュボード）
 
-- 検索対象: アイテム／メディア／アイテムセットからチェックボックスで選択。
-- カスタム CSS（スコープ済み）: ブロック固有の id `#iiif-sc-<id>` を利用できます。
-- トリミング: 上下左右の%を指定（`/full/` の部分を `pct:` 領域に置換）。
+すべてのカルーセルのデフォルトの動作と画像プールを制御します。**IIIF Search Carousel**メニューからアクセスします。
 
-フロントの動作:
+- **画像数:** 画像プールに取得・保持する画像の総数。
+- **カルーセル表示時間:** 各スライドが自動で切り替わるまでの表示時間（秒）。
+- **IIIF画像サイズ:** IIIF Image APIに要求する画像の幅（ピクセル単位、例: `1600`）。
+- **アスペクト比:** カルーセルコンテナのアスペクト比。プリセットから選択するか、「カスタム」で独自の幅と高さの比率を定義します。
+- **選択ルール:** マニフェストに含まれるキャンバス数に基づいて、表示するキャンバスを選択するルールを定義します。詳細は下記の「キャンバス選択ルール」セクションを参照してください。
+- **マニフェストURL:** IIIFマニフェストのURLを1行に1つずつリストします。モジュールはこれらのソースから画像を取得します。
+- **自動リビルド:**
+    - **有効化:** 画像プールの自動リビルドを有効にする場合にチェックします。
+    - **間隔:** 自動リビルドを実行する最小間隔（分）を設定します。これはページ訪問時にトリガーされる簡易的なcron機能です。
 
-- カルーセルは自動で切り替わります。画像をクリックするとマニフェストの関連 URL があれば遷移します。
-- 複数の検索対象を設定した場合でも、オーバーレイは設定された対象を尊重して検索を行います（フロント側のターゲット選択UIは不要）。
+### ブロック設定（サイトページ編集画面）
 
-選択ルール:
-- `1 => 1`, `2 => 2`, `5+ => random(3-last-1)` のように記述します。全角ダッシュやスペースを含んでも解釈されます（例: `3 - last - 1`）。最初にマッチしたルールを適用し、どれにもマッチしない場合は完全ランダムで選択します。
+サイトページに「IIIF Search Carousel」ブロックを追加すると、その特定のインスタンスに対して設定を上書き・指定できます。
 
-## 既知の制限
+- **検索対象:** このブロックの検索ボックスがクエリすべきリソース種別（アイテム、メディア、アイテムセット）にチェックを入れます。
+- **検索ボックスを表示:** チェックを外すと検索ボックスが非表示になり、純粋な装飾用画像カルーセルとして使用できます。
+- **カスタムCSS（スコープ済み）:** このブロックにのみ適用されるCSSルールを追加します。スコープを容易にするため、ユニークなIDセレクタ（例: `#iiif-sc-123`）が提供されます。
+- **トリミング（上下左右）（%）:** 画像の各辺からトリミングするパーセンテージを指定します。例えば、「上をトリミング」に`10`と設定すると、画像の上部10%がカットされます。これはIIIF Image APIの`pct:`領域指定を利用します。
 
-- 自動リビルドはページ描画タイミングのベストエフォートです。重い更新は cron 等の運用を検討してください。
-- 画像の取得は外部の IIIF エンドポイントに依存します。
+## 高度な機能
 
-## ライセンス
+### キャンバス選択ルール
 
-GPL-3.0-or-later
+「選択ルール」により、マニフェストからどのキャンバスが選ばれるかを正確に制御できます。最初に一致したルールが適用され、どのルールにも一致しない場合は、フォールバックとしてランダムなキャンバスが選択されます。
+
+**フォーマット:** `条件 => アクション` （1行に1ルール）
+
+-   **条件:**
+    -   `N`: マニフェストがちょうど`N`個のキャンバスを持つ場合に一致。
+    -   `A-B`: キャンバス数が`A`から`B`の間（両端を含む）の場合に一致。
+    -   `N+`: キャンバス数が`N`以上の場合に一致。
+-   **アクション:**
+    -   `N`: N番目のキャンバスを選択（1ベースのインデックス）。
+    -   `last`: 最後のキャンバスを選択。
+    -   `random`: 利用可能なすべてのキャンバスからランダムに1つ選択。
+    -   `random(A-B)`: A番目からB番目の間（両端を含む、1ベース）でランダムに1つ選択。
+    -   `random(A-last-O)`: A番目から、最後からオフセット`O`を引いた位置までの間でランダムに1つ選択。例: `random(2-last-1)`は、2番目から最後から2番目までの間で選択します。
+
+**ルール例:**
+
+```
+1 => 1
+2 => 2
+3-5 => random(2-last)
+6+ => random(3-last-1)
+```
+
+-   マニフェストにキャンバスが1つしかない場合、1枚目を選択。
+-   2つある場合、2枚目を選択。
+-   3〜5つある場合、2枚目から最後の間でランダムに選択。
+-   6つ以上ある場合、3枚目から最後から2番目の間でランダムに選択。
+
+### スマートな関連URL抽出
+
+画像がクリックされると、ユーザーは「関連URL」に遷移します。このURLは、以下の優先順位でマニフェストデータからインテリジェントに抽出されます。
+
+1.  **Omeka Sリソースリンク（Service/Image URLから）:** Omeka Sのメディアを指すURL（例: `/iiif/3/456`）を検出し、直接リンク（`omeka:media:456`）を生成します。
+2.  **キャンバスレベルのリンク:**
+    -   `homepage` (v3)
+    -   `seeAlso` (v3)
+    -   `related` (v2)
+    -   キャンバス自身のURI (`id`)
+3.  **マニフェストレベルのリンク:**
+    -   Omeka SのアイテムマニフェストURL（例: `/item/123/manifest`）を検出し、アイテム（`omeka:item:123`）にリンクします。
+    -   `homepage` (v3)
+    -   `related` (v2)
+4.  **フォールバック:** マニフェストURL自体。
+
+## 既知の制約
+
+-   自動リビルド機能はユーザーの訪問によってトリガーされるものであり、本格的なcronジョブの代替にはなりません。ミッションクリティカルで頻繁な更新が必要な場合は、システムのcronタスク経由でリビルドジョブをトリガーすることを検討してください。
+-   カルーセルのパフォーマンスは、リモートにあるIIIF画像サーバーの速度と可用性に依存します。
