@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Laminas\ServiceManager\Factory\InvokableFactory;
+use Psr\Container\ContainerInterface;
 use IiifSearchCarousel\Controller\Admin\ConfigController;
 use IiifSearchCarousel\Site\BlockLayout\SearchCarouselBlock;
 use IiifSearchCarousel\Form\SettingsForm;
@@ -15,7 +16,9 @@ use IiifSearchCarousel\Form\SettingsForm;
 return [
   'block_layouts' => [
     'factories' => [
-      SearchCarouselBlock::class => InvokableFactory::class,
+      SearchCarouselBlock::class => function (ContainerInterface $container) {
+        return new SearchCarouselBlock($container);
+      },
     ],
   ],
 

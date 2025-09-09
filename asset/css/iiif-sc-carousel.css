@@ -68,4 +68,5 @@
 .iiif-sc__search button {
     padding: .5rem .75rem;
     cursor: pointer;
+    margin: auto;
 }

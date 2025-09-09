@@ -56,6 +56,17 @@ When you add a "IIIF Search Carousel" block to a site page, you can override or 
 - **Custom CSS (scoped):** Add CSS rules that will only apply to this block. A unique ID selector (e.g., `#iiif-sc-123`) is provided for easy scoping.
 - **Trim (top, right, bottom, left) (%):** Specify a percentage to trim from each side of the image. For example, setting "Trim top" to `10` will cut off the top 10% of the image. This uses the IIIF Image API's `pct:` region parameter.
 
+#### Admin-only: Current Selection List (Preview)
+
+At the bottom of the block form, an admin-only preview lists up to 50 currently selected entries from the image pool:
+
+- Manifest Title
+- Image link (direct IIIF image URL)
+- Manifest link (manifest URL)
+- Resource page link
+
+For internal links detected as `omeka:item:{id}` or `omeka:media:{id}`, the "Resource page" points to the public site page (not the admin UI). If the list is empty, configure manifest URLs in the module settings and run "Rebuild" to populate the pool.
+
 ## Advanced Features
 
 ### Canvas Selection Rules
@@ -169,6 +180,17 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **検索ボックスを表示:** チェックを外すと検索ボックスが非表示になり、純粋な装飾用画像カルーセルとして使用できます。
 - **カスタムCSS（スコープ済み）:** このブロックにのみ適用されるCSSルールを追加します。スコープを容易にするため、ユニークなIDセレクタ（例: `#iiif-sc-123`）が提供されます。
 - **トリミング（上下左右）（%）:** 画像の各辺からトリミングするパーセンテージを指定します。例えば、「上をトリミング」に`10`と設定すると、画像の上部10%がカットされます。これはIIIF Image APIの`pct:`領域指定を利用します。
+
+#### 管理画面のみ: 現在の選択リスト（プレビュー）
+
+ブロック設定フォームの下部に、画像プールから現在選択されている最大50件の一覧を表示します。
+
+- マニフェストのタイトル
+- 画像リンク（IIIF画像のURL）
+- マニフェストへのリンク（manifest URL）
+- 資料ページへのリンク
+
+`omeka:item:{id}` / `omeka:media:{id}` と検出された内部リンクは、管理画面ではなくサイト公開ページへのURLに変換して表示します。リストが空の場合は、モジュール設定でマニフェストURLを登録し、「再構築」を実行して画像プールを作成してください。
 
 ## 高度な機能
 

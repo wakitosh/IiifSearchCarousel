@@ -3,6 +3,7 @@
 namespace IiifSearchCarousel\Site\BlockLayout;
 
 use Laminas\View\Renderer\PhpRenderer;
+use Psr\Container\ContainerInterface;
 use Omeka\Api\Representation\SitePageBlockRepresentation;
 use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
@@ -20,6 +21,16 @@ use IiifSearchCarousel\Job\RebuildImagesJob;
  * Block layout: IIIF Search Carousel.
  */
 class SearchCarouselBlock extends AbstractBlockLayout {
+  /**
+   * Service container.
+   *
+   * @var \Psr\Container\ContainerInterface
+   */
+  private $services;
+
+  public function __construct(ContainerInterface $services) {
+    $this->services = $services;
+  }
 
   /**
    * {@inheritDoc} */
@@ -30,7 +41,8 @@ class SearchCarouselBlock extends AbstractBlockLayout {
   /**
    * {@inheritDoc} */
   public function render(PhpRenderer $view, SitePageBlockRepresentation $block) {
-    $services = $view->getHelperPluginManager()->getServiceLocator();
+    // Use the injected container instead of deprecated getServiceLocator().
+    $services = $this->services;
     $settings = $services->get('Omeka\Settings');
     $connection = $services->get('Omeka\Connection');
     // Auto-rebuild trigger on visit if enabled and interval elapsed.
@@ -208,7 +220,74 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     }
     $form->add($left);
 
-    return $view->formCollection($form, FALSE);
+    // Append current selection preview (read-only list from iiif_sc_images).
+    // Show up to 50 entries for performance.
+    $html = $view->formCollection($form, FALSE);
+    try {
+      $conn = $this->services->get('Omeka\Connection');
+      $rows = $conn->fetchAllAssociative('SELECT * FROM iiif_sc_images ORDER BY position ASC LIMIT 50');
+    }
+    catch (\Throwable $e) {
+      $rows = [];
+    }
+
+    $esc = function ($s) use ($view) {
+      return $view->escapeHtml((string) $s);
+    };
+
+    $siteSlug = $site->slug();
+    $buildResourceHref = function ($related) use ($view, $siteSlug) {
+      $href = NULL;
+      if (is_string($related)) {
+        if (strpos($related, 'omeka:media:') === 0) {
+          $id = (int) substr($related, strlen('omeka:media:'));
+          $href = $view->url('site/resource', [
+            'site-slug' => $siteSlug,
+            'controller' => 'media',
+            'action' => 'show',
+            'id' => $id,
+          ]);
+        }
+        elseif (strpos($related, 'omeka:item:') === 0) {
+          $id = (int) substr($related, strlen('omeka:item:'));
+          $href = $view->url('site/resource', [
+            'site-slug' => $siteSlug,
+            'controller' => 'item',
+            'action' => 'show',
+            'id' => $id,
+          ]);
+        }
+        else {
+          $href = $related;
+        }
+      }
+      return $href;
+    };
+
+    $html .= "\n<fieldset class=\"field\">\n  <legend>現在の選択リスト（最大50件）</legend>\n  <div class=\"value\">";
+    if ($rows) {
+      $html .= "\n    <table class=\"tablesaw tablesaw-stack\">\n      <thead>\n        <tr>\n          <th>マニフェストのタイトル</th>\n          <th>画像リンク</th>\n          <th>マニフェスト</th>\n          <th>資料ページ</th>\n        </tr>\n      </thead>\n      <tbody>";
+      foreach ($rows as $r) {
+        $label = $r['label'] ?? '';
+        $img = $r['image_url'] ?? '';
+        $man = $r['manifest_url'] ?? '';
+        $rel = $r['related_url'] ?? '';
+        $relHref = $buildResourceHref($rel);
+        $html .= "\n        <tr>"
+          . '<td>' . $esc($label) . '</td>'
+          . '<td>' . ($img ? '<a href="' . $esc($img) . '" target="_blank" rel="noopener">画像</a>' : '') . '</td>'
+          . '<td>' . ($man ? '<a href="' . $esc($man) . '" target="_blank" rel="noopener">manifest</a>' : '') . '</td>'
+          . '<td>' . ($relHref ? '<a href="' . $esc($relHref) . '" target="_blank" rel="noopener">ページ</a>' : '') . '</td>'
+        . '</tr>';
+      }
+      $html .= "\n      </tbody>\n    </table>";
+    }
+    else {
+      $html .= "\n    <p>まだ選択された画像はありません。設定ページでマニフェストを登録し、画像の再構築を実行してください。</p>";
+    }
+    $html .= "\n  </div>\n</fieldset>";
+
+    return $html;
   }
 
   /**
