@@ -47,7 +47,8 @@
     inset: 0;
     display: grid;
     place-items: center;
-    pointer-events: none
+    pointer-events: none;
+    padding: 1rem
 }
 
 .iiif-sc__search {
@@ -56,17 +57,40 @@
     padding: 1rem;
     border-radius: .5rem;
     display: flex;
-    gap: .5rem
+    gap: .5rem;
+    width: 100%;
+    max-width: 720px;
+    box-sizing: border-box;
+    align-items: stretch
 }
 
 .iiif-sc__search input {
-    min-width: 22rem;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: .5rem;
-    margin: auto;
+    margin: 0;
+    box-sizing: border-box
 }
 
 .iiif-sc__search button {
     padding: .5rem .75rem;
     cursor: pointer;
-    margin: auto;
+    margin: 0;
+    flex: 0 0 auto
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .iiif-sc__search {
+        flex-direction: column;
+        gap: .5rem;
+        padding: .75rem;
+        max-width: 100%;
+    }
+    .iiif-sc__search input {
+        width: 100%;
+    }
+    .iiif-sc__search button {
+        width: 100%;
+    }
 }
