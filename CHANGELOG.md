@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.5 - 2025-09-10
+EN:
+- Responsive aspect ratios: Added Small/Medium breakpoint settings and per-breakpoint ratios (inherit/preset/custom). Template now emits per-block scoped CSS with media queries to switch `aspect-ratio` accordingly.
+- Fixed PSR-12 indentation in admin ConfigController.
+
+JA:
+- レスポンシブなアスペクト比: Small/Medium のブレークポイント設定と、各幅での比率（継承/プリセット/カスタム）を追加。テンプレートでブロック単位のスコープ付きCSSとメディアクエリを出力し、`aspect-ratio` を幅に応じて切り替えるようにしました。
+- 管理用ConfigControllerのインデント（PSR-12）を修正。
+
 ## 0.2.4 - 2025-09-09
 EN:
 - Block admin form: Added an admin-only "Current selection list" preview (up to 50 entries) displaying Manifest Title, Image link, Manifest link, and Resource page link. Internal references like `omeka:item:{id}` / `omeka:media:{id}` now resolve to the public site URLs in the preview.

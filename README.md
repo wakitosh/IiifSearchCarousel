@@ -22,6 +22,7 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
 - **Customization:**
     - **Aspect Ratio Control:** Set a fixed (1:1, 4:3, 16:9) or custom aspect ratio for the carousel.
     - **Per-Block Custom CSS:** Apply custom CSS scoped to each individual block.
+    - **Responsive Aspect Ratios (new):** Optionally define different aspect ratios for common mobile sizes via two breakpoints (Small/Medium). The module outputs per-block scoped CSS with media queries to switch the container's aspect-ratio at those widths.
 
 ## Installation
 
@@ -41,6 +42,7 @@ These settings control the default behavior and image pool for all carousels. Ac
 - **Carousel duration:** The time (in seconds) each slide is displayed before auto-rotating.
 - **IIIF image size:** The width (in pixels) to request from the IIIF Image API (e.g., `1600`).
 - **Aspect ratio:** The aspect ratio for the carousel container. Choose a preset or "Custom" to define your own width and height ratio.
+- **Responsive aspect ratios:** Define two breakpoints and optional aspect ratios for Small and Medium screens. Set "Inherit" to keep the default ratio, or pick a preset/custom ratio to override at that width.
 - **Selection rules:** Define rules to pick a canvas from a manifest based on the number of canvases it contains. See the "Canvas Selection Rules" section below for details.
 - **Manifest URLs:** A list of IIIF manifest URLs, one per line. The module will fetch images from these sources.
 - **Auto rebuild:**
@@ -147,6 +149,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **カスタマイズ:**
     - **アスペクト比制御:** 固定（1:1, 4:3, 16:9）またはカスタムのアスペクト比をカルーセルに設定できます。
     - **ブロック単位のカスタムCSS:** 個々のブロックにのみ適用されるカスタムCSSを追加できます。
+    - **レスポンシブなアスペクト比（新）:** Small/Medium の2つのブレークポイントで、画面幅に応じて異なるアスペクト比を適用できます。各ブロックにスコープされたCSSとメディアクエリにより、指定した幅で自動的に切り替わります。
 
 ## インストール
 
@@ -166,6 +169,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **カルーセル表示時間:** 各スライドが自動で切り替わるまでの表示時間（秒）。
 - **IIIF画像サイズ:** IIIF Image APIに要求する画像の幅（ピクセル単位、例: `1600`）。
 - **アスペクト比:** カルーセルコンテナのアスペクト比。プリセットから選択するか、「カスタム」で独自の幅と高さの比率を定義します。
+- **レスポンシブなアスペクト比:** Small/Medium の2つのブレークポイント値と、それぞれの比率（継承/プリセット/カスタム）を設定できます。「継承」を選ぶとデフォルトの比率を維持します。
 - **選択ルール:** マニフェストに含まれるキャンバス数に基づいて、表示するキャンバスを選択するルールを定義します。詳細は下記の「キャンバス選択ルール」セクションを参照してください。
 - **マニフェストURL:** IIIFマニフェストのURLを1行に1つずつリストします。モジュールはこれらのソースから画像を取得します。
 - **自動リビルド:**

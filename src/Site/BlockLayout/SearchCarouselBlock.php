@@ -68,22 +68,39 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $w = (int) ($settings->get('iiif_sc.aspect_ratio_w') ?? 16);
     $h = (int) ($settings->get('iiif_sc.aspect_ratio_h') ?? 9);
 
-    switch ($aspect) {
-      case '1:1':
-        $ratio = '1 / 1';
-        break;
+    $toRatio = function (string $mode, int $rw, int $rh): string {
+      switch ($mode) {
+        case '1:1':
+          return '1 / 1';
 
-      case '4:3':
-        $ratio = '4 / 3';
-        break;
+        case '4:3':
+          return '4 / 3';
 
-      case '16:9':
-        $ratio = '16 / 9';
-        break;
+        case '16:9':
+          return '16 / 9';
 
-      default:
-        $ratio = ($w > 0 && $h > 0) ? ($w . ' / ' . $h) : '16 / 9';
-    }
+        case 'custom':
+          return ($rw > 0 && $rh > 0) ? ($rw . ' / ' . $rh) : '16 / 9';
+
+        default:
+          return '16 / 9';
+      }
+    };
+
+    $ratioDefault = $toRatio($aspect, $w, $h);
+
+    // Responsive aspect ratios from settings.
+    $bpSm = (int) ($settings->get('iiif_sc.aspect_ratio_breakpoint_sm') ?? 600);
+    $modeSm = (string) ($settings->get('iiif_sc.aspect_ratio_mode_sm') ?? 'inherit');
+    $wSm = (int) ($settings->get('iiif_sc.aspect_ratio_w_sm') ?? 16);
+    $hSm = (int) ($settings->get('iiif_sc.aspect_ratio_h_sm') ?? 9);
+    $ratioSm = $modeSm !== 'inherit' ? $toRatio($modeSm, $wSm, $hSm) : NULL;
+
+    $bpMd = (int) ($settings->get('iiif_sc.aspect_ratio_breakpoint_md') ?? 900);
+    $modeMd = (string) ($settings->get('iiif_sc.aspect_ratio_mode_md') ?? 'inherit');
+    $wMd = (int) ($settings->get('iiif_sc.aspect_ratio_w_md') ?? 16);
+    $hMd = (int) ($settings->get('iiif_sc.aspect_ratio_h_md') ?? 9);
+    $ratioMd = $modeMd !== 'inherit' ? $toRatio($modeMd, $wMd, $hMd) : NULL;
 
     $rows = $connection->fetchAllAssociative('SELECT * FROM iiif_sc_images ORDER BY position ASC');
 
@@ -115,7 +132,11 @@ class SearchCarouselBlock extends AbstractBlockLayout {
 
     return $view->partial('common/block-layout/iiif-search-carousel', [
       'rows' => $rows,
-      'ratio' => $ratio,
+      'ratioDefault' => $ratioDefault,
+      'ratioSm' => $ratioSm,
+      'ratioMd' => $ratioMd,
+      'bpSm' => $bpSm,
+      'bpMd' => $bpMd,
       'duration' => $duration * 1000,
       'blockId' => (int) $block->id(),
       'customCss' => (string) $block->dataValue('custom_css', ''),

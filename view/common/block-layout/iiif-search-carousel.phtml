@@ -1,5 +1,5 @@
 <?php
-// $rows, $ratio, $duration, $blockId, $customCss, $resourceTargets, $trimTop, $trimRight, $trimBottom, $trimLeft, $showSearch
+// $rows, $ratioDefault, $ratioSm, $ratioMd, $bpSm, $bpMd, $duration, $blockId, $customCss, $resourceTargets, $trimTop, $trimRight, $trimBottom, $trimLeft, $showSearch
 // Resource targets: items / media / item_sets
 $controllerMap = [
   'items' => 'item',
@@ -33,13 +33,27 @@ if ($__hasTrim) {
 }
 ?>
 <section class="iiif-sc" id="iiif-sc-<?php echo (int) $blockId; ?>">
+  <style>
+    /* Scoped responsive aspect ratios for this block */
+    #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioDefault); ?>; }
+<?php if (!empty($ratioMd) && !empty($bpMd)): ?>
+    @media (max-width: <?php echo (int) $bpMd; ?>px) {
+      #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioMd); ?>; }
+    }
+<?php endif; ?>
+<?php if (!empty($ratioSm) && !empty($bpSm)): ?>
+    @media (max-width: <?php echo (int) $bpSm; ?>px) {
+      #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioSm); ?>; }
+    }
+<?php endif; ?>
+  </style>
   <?php if (!empty($customCss)): ?>
     <style>
       /* Custom CSS for #iiif-sc-<?php echo (int) $blockId; ?> */
 <?php echo $customCss; ?>
     </style>
   <?php endif; ?>
-  <div class="iiif-sc__bg" style="aspect-ratio: <?php echo $this->escapeHtml($ratio); ?>">
+  <div class="iiif-sc__bg">
     <?php foreach ($rows as $i => $r): ?>
       <?php
         $imgUrl = $r['image_url'] ?? '';

@@ -93,6 +93,78 @@ HTML;
     ]);
 
     $this->add([
+      'name' => 'aspect_ratio_breakpoint_sm',
+      'type' => Number::class,
+      'options' => ['label' => 'Breakpoint (small, max-width px)'],
+      'attributes' => ['min' => 320, 'step' => 1],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_mode_sm',
+      'type' => Select::class,
+      'options' => [
+        'label' => 'Aspect ratio (small screens)',
+        'value_options' => [
+          'inherit' => 'Inherit (use default)',
+          '1:1' => '1:1',
+          '4:3' => '4:3',
+          '16:9' => '16:9',
+          'custom' => 'Custom',
+        ],
+      ],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_w_sm',
+      'type' => Number::class,
+      'options' => ['label' => 'Custom width (small)'],
+      'attributes' => ['min' => 1, 'step' => 1],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_h_sm',
+      'type' => Number::class,
+      'options' => ['label' => 'Custom height (small)'],
+      'attributes' => ['min' => 1, 'step' => 1],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_breakpoint_md',
+      'type' => Number::class,
+      'options' => ['label' => 'Breakpoint (medium, max-width px)'],
+      'attributes' => ['min' => 480, 'step' => 1],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_mode_md',
+      'type' => Select::class,
+      'options' => [
+        'label' => 'Aspect ratio (medium screens)',
+        'value_options' => [
+          'inherit' => 'Inherit (use default)',
+          '1:1' => '1:1',
+          '4:3' => '4:3',
+          '16:9' => '16:9',
+          'custom' => 'Custom',
+        ],
+      ],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_w_md',
+      'type' => Number::class,
+      'options' => ['label' => 'Custom width (medium)'],
+      'attributes' => ['min' => 1, 'step' => 1],
+    ]);
+
+    $this->add([
+      'name' => 'aspect_ratio_h_md',
+      'type' => Number::class,
+      'options' => ['label' => 'Custom height (medium)'],
+      'attributes' => ['min' => 1, 'step' => 1],
+    ]);
+
+    $this->add([
       'name' => 'manifest_urls',
       'type' => Textarea::class,
       'options' => ['label' => 'Manifest URLs (one per line)'],

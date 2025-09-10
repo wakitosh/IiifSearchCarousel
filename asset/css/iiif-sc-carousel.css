@@ -82,7 +82,10 @@
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
-    .iiif-sc__overlay { padding: .5rem; }
+    .iiif-sc__overlay {
+        padding: .5rem;
+    }
+
     .iiif-sc__search {
         flex-direction: row;
         gap: .4rem;
@@ -90,6 +93,13 @@
         max-width: 100%;
         font-size: .9rem;
     }
-    .iiif-sc__search input { padding: .4rem; }
-    .iiif-sc__search button { padding: .4rem .6rem; white-space: nowrap; }
+
+    .iiif-sc__search input {
+        padding: .4rem;
+    }
+
+    .iiif-sc__search button {
+        padding: .4rem .6rem;
+        white-space: nowrap;
+    }
 }
