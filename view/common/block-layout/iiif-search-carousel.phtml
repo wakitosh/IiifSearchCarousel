@@ -11,6 +11,22 @@ $controller = $controllerMap[$initialTarget] ?? 'item';
 $searchAction = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
 $searchValue = $this->escapeHtml($this->params()->fromQuery('search', ''));
 
+// Ensure truncateLen is defined (0 disables truncation)
+$truncateLen = isset($truncateLen) ? (int) $truncateLen : 0;
+
+// Helper: truncate title safely (UTF-8). 0 = no truncation.
+$__truncate = function ($s) use ($truncateLen) {
+  $s = (string) $s;
+  $n = (int) ($truncateLen ?? 0);
+  if ($n <= 0) return $s;
+  if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+    return (mb_strlen($s, 'UTF-8') > $n)
+      ? (mb_substr($s, 0, $n, 'UTF-8') . '…')
+      : $s;
+  }
+  return (strlen($s) > $n) ? (substr($s, 0, $n) . '…') : $s;
+};
+
 // Helper: format a percentage with up to 1 decimal without trailing .0
 $__fmtPct = function ($v) {
   $v = (float) $v;
@@ -79,11 +95,12 @@ if ($__hasTrim) {
           }
         }
       ?>
-      <a class="iiif-sc__slide<?php if ($i === 0) echo ' is-active'; ?>"<?php if ($href): ?> href="<?php echo $this->escapeHtml($href); ?>"<?php endif; ?> aria-label="<?php echo $this->escapeHtml($r['label'] ?? ''); ?>">
+      <?php $labelFull = (string) ($r['label'] ?? ''); $labelShort = $__truncate($labelFull); ?>
+      <a class="iiif-sc__slide<?php if ($i === 0) echo ' is-active'; ?>"<?php if ($href): ?> href="<?php echo $this->escapeHtml($href); ?>"<?php endif; ?> aria-label="<?php echo $this->escapeHtml($labelFull); ?>">
         <img src="<?php echo $this->escapeHtml($imgUrl); ?>" alt="" loading="eager" decoding="async">
-        <?php if (!empty($r['label'])): ?>
-          <span class="iiif-sc__caption">
-            <?php echo $this->escapeHtml($r['label']); ?>
+        <?php if ($labelFull !== ''): ?>
+          <span class="iiif-sc__caption"<?php if ($labelShort !== $labelFull): ?> title="<?php echo $this->escapeHtml($labelFull); ?>"<?php endif; ?>>
+            <?php echo $this->escapeHtml($labelShort); ?>
           </span>
         <?php endif; ?>
       </a>

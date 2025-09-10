@@ -59,7 +59,8 @@
     display: flex;
     gap: .5rem;
     width: 100%;
-    max-width: 720px;
+    /* Scale with viewport: narrower on small/medium, capped on large */
+    max-width: clamp(320px, 60vw, 720px);
     box-sizing: border-box;
     align-items: center;
     flex-wrap: nowrap
@@ -80,6 +81,13 @@
     flex: 0 0 auto
 }
 
+/* Medium adjustments */
+@media (max-width: 900px) {
+    .iiif-sc__search {
+        max-width: clamp(280px, 70vw, 640px);
+    }
+}
+
 /* Mobile adjustments */
 @media (max-width: 600px) {
     .iiif-sc__overlay {
@@ -90,7 +98,8 @@
         flex-direction: row;
         gap: .4rem;
         padding: .5rem;
-        max-width: 100%;
+        /* Keep some margin to the edges while allowing wide input (narrower) */
+        max-width: clamp(220px, 88vw, 520px);
         font-size: .9rem;
     }
 

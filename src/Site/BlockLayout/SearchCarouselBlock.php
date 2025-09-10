@@ -104,6 +104,9 @@ class SearchCarouselBlock extends AbstractBlockLayout {
 
     $rows = $connection->fetchAllAssociative('SELECT * FROM iiif_sc_images ORDER BY position ASC');
 
+    // Title truncation length (front captions/aria). 0 = no truncation.
+    $truncateLen = (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0);
+
     $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-carousel.js', 'IiifSearchCarousel'));
     $view->headLink()->appendStylesheet($view->assetUrl('css/iiif-sc-carousel.css', 'IiifSearchCarousel'));
 
@@ -140,6 +143,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       'duration' => $duration * 1000,
       'blockId' => (int) $block->id(),
       'customCss' => (string) $block->dataValue('custom_css', ''),
+      'truncateLen' => $truncateLen,
       'resourceTargets' => $resourceTargets,
       'trimTop' => $trimTop,
       'trimRight' => $trimRight,
@@ -256,6 +260,27 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       return $view->escapeHtml((string) $s);
     };
 
+    // Truncation length from settings (0 = no truncation).
+    try {
+      $truncateLen = (int) ($this->services->get('Omeka\Settings')->get('iiif_sc.truncate_title_length') ?? 0);
+    }
+    catch (\Throwable $e) {
+      $truncateLen = 0;
+    }
+    $truncateTitle = function (string $s) use ($truncateLen) {
+      if ($truncateLen <= 0) {
+        return $s;
+      }
+      // Use mb_* if available for multibyte safety.
+      if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        if (mb_strlen($s, 'UTF-8') > $truncateLen) {
+          return mb_substr($s, 0, $truncateLen, 'UTF-8') . '…';
+        }
+        return $s;
+      }
+      return strlen($s) > $truncateLen ? substr($s, 0, $truncateLen) . '…' : $s;
+    };
+
     $siteSlug = $site->slug();
     $buildResourceHref = function ($related) use ($view, $siteSlug) {
       $href = NULL;
@@ -290,12 +315,13 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       $html .= "\n    <table class=\"tablesaw tablesaw-stack\">\n      <thead>\n        <tr>\n          <th>マニフェストのタイトル</th>\n          <th>画像リンク</th>\n          <th>マニフェスト</th>\n          <th>資料ページ</th>\n        </tr>\n      </thead>\n      <tbody>";
       foreach ($rows as $r) {
         $label = $r['label'] ?? '';
+        $labelShort = $truncateTitle((string) $label);
         $img = $r['image_url'] ?? '';
         $man = $r['manifest_url'] ?? '';
         $rel = $r['related_url'] ?? '';
         $relHref = $buildResourceHref($rel);
         $html .= "\n        <tr>"
-          . '<td>' . $esc($label) . '</td>'
+          . '<td' . ($labelShort !== $label ? ' title="' . $esc($label) . '"' : '') . '>' . $esc($labelShort) . '</td>'
           . '<td>' . ($img ? '<a href="' . $esc($img) . '" target="_blank" rel="noopener">画像</a>' : '') . '</td>'
           . '<td>' . ($man ? '<a href="' . $esc($man) . '" target="_blank" rel="noopener">manifest</a>' : '') . '</td>'
           . '<td>' . ($relHref ? '<a href="' . $esc($relHref) . '" target="_blank" rel="noopener">ページ</a>' : '') . '</td>'

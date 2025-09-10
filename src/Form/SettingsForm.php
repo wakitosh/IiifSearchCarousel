@@ -30,6 +30,27 @@ class SettingsForm extends Form {
 2 =&gt; 2
 3+ =&gt; random(2-last-1)</code></pre>
 HTML;
+    // Sources & rules.
+    $this->add([
+      'name' => 'manifest_urls',
+      'type' => Textarea::class,
+      'options' => ['label' => 'Manifest URLs (one per line)'],
+      'attributes' => ['rows' => 8],
+    ]);
+
+    $this->add([
+      'name' => 'selection_rules',
+      'type' => Textarea::class,
+      'options' => [
+        'label' => 'Selection rules',
+        'info' => $rulesHelp,
+        // Allow raw HTML in info (Omeka form-row checks 'escape_info').
+        'escape_info' => FALSE,
+      ],
+      'attributes' => ['rows' => 5, 'placeholder' => "1 => 1\n2 => 2\n3+ => random(2-last-1)"],
+    ]);
+
+    // Pool sizing.
     $this->add([
       'name' => 'number_of_images',
       'type' => Number::class,
@@ -38,17 +59,18 @@ HTML;
     ]);
 
     $this->add([
-      'name' => 'carousel_duration',
-      'type' => Number::class,
-      'options' => ['label' => 'Carousel duration (sec)'],
-      'attributes' => ['min' => 1, 'step' => 1, 'required' => TRUE],
-    ]);
-
-    $this->add([
       'name' => 'image_size',
       'type' => Number::class,
       'options' => ['label' => 'IIIF image size (px)'],
       'attributes' => ['min' => 200, 'step' => 10, 'required' => TRUE],
+    ]);
+
+    // Carousel behavior and appearance.
+    $this->add([
+      'name' => 'carousel_duration',
+      'type' => Number::class,
+      'options' => ['label' => 'Carousel duration (sec)'],
+      'attributes' => ['min' => 1, 'step' => 1, 'required' => TRUE],
     ]);
 
     $this->add([
@@ -80,18 +102,7 @@ HTML;
       'attributes' => ['min' => 1, 'step' => 1],
     ]);
 
-    $this->add([
-      'name' => 'selection_rules',
-      'type' => Textarea::class,
-      'options' => [
-        'label' => 'Selection rules',
-        'info' => $rulesHelp,
-        // Allow raw HTML in info (Omeka form-row checks 'escape_info').
-        'escape_info' => FALSE,
-      ],
-      'attributes' => ['rows' => 5, 'placeholder' => "1 => 1\n2 => 2\n3+ => random(2-last-1)"],
-    ]);
-
+    // Responsive aspect ratios.
     $this->add([
       'name' => 'aspect_ratio_breakpoint_sm',
       'type' => Number::class,
@@ -164,14 +175,18 @@ HTML;
       'attributes' => ['min' => 1, 'step' => 1],
     ]);
 
+    // Titles.
     $this->add([
-      'name' => 'manifest_urls',
-      'type' => Textarea::class,
-      'options' => ['label' => 'Manifest URLs (one per line)'],
-      'attributes' => ['rows' => 8],
+      'name' => 'truncate_title_length',
+      'type' => Number::class,
+      'options' => [
+        'label' => 'Max title length',
+        'info' => 'Truncate long link titles (admin preview and front captions). 0 = no truncation.',
+      ],
+      'attributes' => ['min' => 0, 'step' => 1],
     ]);
 
-    // Auto rebuild (poor-man's cron on visit).
+    // Auto rebuild (poor-man's cron on visit)
     $this->add([
       'name' => 'auto_rebuild_enable',
       'type' => Checkbox::class,
@@ -185,6 +200,7 @@ HTML;
       'attributes' => ['min' => 1, 'step' => 1],
     ]);
 
+    // Submit.
     $this->add([
       'name' => 'rebuild_now',
       'type' => Submit::class,

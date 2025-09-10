@@ -23,6 +23,7 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
     - **Aspect Ratio Control:** Set a fixed (1:1, 4:3, 16:9) or custom aspect ratio for the carousel.
     - **Per-Block Custom CSS:** Apply custom CSS scoped to each individual block.
     - **Responsive Aspect Ratios (new):** Optionally define different aspect ratios for common mobile sizes via two breakpoints (Small/Medium). The module outputs per-block scoped CSS with media queries to switch the container's aspect-ratio at those widths.
+    - **Title Truncation (new):** Set a global maximum length for link titles/captions. Front-end captions are truncated safely (UTF-8) and show the full title via tooltip and aria-label. Set 0 to disable.
 
 ## Installation
 
@@ -43,6 +44,7 @@ These settings control the default behavior and image pool for all carousels. Ac
 - **IIIF image size:** The width (in pixels) to request from the IIIF Image API (e.g., `1600`).
 - **Aspect ratio:** The aspect ratio for the carousel container. Choose a preset or "Custom" to define your own width and height ratio.
 - **Responsive aspect ratios:** Define two breakpoints and optional aspect ratios for Small and Medium screens. Set "Inherit" to keep the default ratio, or pick a preset/custom ratio to override at that width.
+- **Title truncation:** Maximum number of characters for link titles. 0 disables truncation. Applies to admin preview and front captions (with full title preserved in tooltip/aria-label).
 - **Selection rules:** Define rules to pick a canvas from a manifest based on the number of canvases it contains. See the "Canvas Selection Rules" section below for details.
 - **Manifest URLs:** A list of IIIF manifest URLs, one per line. The module will fetch images from these sources.
 - **Auto rebuild:**
@@ -68,6 +70,10 @@ At the bottom of the block form, an admin-only preview lists up to 50 currently 
 - Resource page link
 
 For internal links detected as `omeka:item:{id}` or `omeka:media:{id}`, the "Resource page" points to the public site page (not the admin UI). If the list is empty, configure manifest URLs in the module settings and run "Rebuild" to populate the pool.
+
+### Search Box Size
+
+The overlaid search form scales with viewport width. By default it uses a responsive max-width with `clamp()` so it stays proportionate to the carousel on small/medium screens. You can further tailor its width per block with the "Custom CSS (scoped)" field; target the selector `#iiif-sc-{id} .iiif-sc__search`.
 
 ## Advanced Features
 
@@ -150,6 +156,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
     - **アスペクト比制御:** 固定（1:1, 4:3, 16:9）またはカスタムのアスペクト比をカルーセルに設定できます。
     - **ブロック単位のカスタムCSS:** 個々のブロックにのみ適用されるカスタムCSSを追加できます。
     - **レスポンシブなアスペクト比（新）:** Small/Medium の2つのブレークポイントで、画面幅に応じて異なるアスペクト比を適用できます。各ブロックにスコープされたCSSとメディアクエリにより、指定した幅で自動的に切り替わります。
+    - **タイトル省略（新）:** リンクタイトル/キャプションの最大文字数を全体設定で指定できます。フロントではUTF-8安全に省略し、ツールチップとaria-labelで全文を保持します。0で無効。
 
 ## インストール
 
@@ -170,6 +177,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **IIIF画像サイズ:** IIIF Image APIに要求する画像の幅（ピクセル単位、例: `1600`）。
 - **アスペクト比:** カルーセルコンテナのアスペクト比。プリセットから選択するか、「カスタム」で独自の幅と高さの比率を定義します。
 - **レスポンシブなアスペクト比:** Small/Medium の2つのブレークポイント値と、それぞれの比率（継承/プリセット/カスタム）を設定できます。「継承」を選ぶとデフォルトの比率を維持します。
+- **タイトル省略:** リンクタイトルの最大文字数。0で無効。管理プレビューとフロントのキャプションに適用され、全文はツールチップ/aria-labelで保持されます。
 - **選択ルール:** マニフェストに含まれるキャンバス数に基づいて、表示するキャンバスを選択するルールを定義します。詳細は下記の「キャンバス選択ルール」セクションを参照してください。
 - **マニフェストURL:** IIIFマニフェストのURLを1行に1つずつリストします。モジュールはこれらのソースから画像を取得します。
 - **自動リビルド:**
@@ -195,6 +203,10 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - 資料ページへのリンク
 
 `omeka:item:{id}` / `omeka:media:{id}` と検出された内部リンクは、管理画面ではなくサイト公開ページへのURLに変換して表示します。リストが空の場合は、モジュール設定でマニフェストURLを登録し、「再構築」を実行して画像プールを作成してください。
+
+### 検索ボックスのサイズ
+
+オーバーレイの検索フォームはビューポート幅に応じてスケールします。既定では `clamp()` を用いたレスポンシブな最大幅を設定しており、Small/Medium でもカルーセルに対して大きすぎないように調整されています。さらに細かく調整したい場合は、ブロックの「カスタムCSS（スコープ済み）」で `#iiif-sc-{id} .iiif-sc__search` をターゲットに上書きしてください。
 
 ## 高度な機能
 
