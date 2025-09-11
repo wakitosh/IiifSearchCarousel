@@ -146,21 +146,54 @@ class RebuildImagesJob extends AbstractJob {
     // v3.
     if (!empty($canvas['items'][0]['items'][0]['body'])) {
       $body = $canvas['items'][0]['items'][0]['body'];
+      $svc = NULL;
+      // Normalize service(s) for v3: can be an object or an array of services.
       if (isset($body['service'])) {
-        $svc = $body['service'];
+        $s = $body['service'];
+        if (is_array($s)) {
+          // Associative object with keys like 'id'/'type'.
+          if (array_keys($s) !== range(0, count($s) - 1)) {
+            $svc = $s;
+          }
+          // Indexed array: pick first service.
+          elseif (!empty($s[0]) && is_array($s[0])) {
+            $svc = $s[0];
+          }
+        }
       }
-      elseif (!empty($body['service'][0])) {
-        $svc = $body['service'][0];
+      // Some implementations use 'services' (plural).
+      if ($svc === NULL && isset($body['services']) && is_array($body['services']) && !empty($body['services'][0])) {
+        $svc = $body['services'][0];
       }
-      if (!empty($svc['type']) && strpos($svc['type'], 'ImageService3') !== FALSE && !empty($svc['id'])) {
-        return rtrim($svc['id'], '/') . '/full/' . $size . ',/0/default.jpg';
+      if (is_array($svc)) {
+        $sid = $svc['id'] ?? ($svc['@id'] ?? NULL);
+        $stype = isset($svc['type']) ? (string) $svc['type'] : '';
+        $isImageService = $sid && (
+          ($stype !== '' && stripos($stype, 'ImageService3') !== FALSE)
+          || !empty($svc['profile'])
+          || !empty($svc['@context'])
+        );
+        if ($isImageService) {
+          return rtrim((string) $sid, '/') . '/full/' . $size . ',/0/default.jpg';
+        }
+      }
+
+      // Fallback: direct thumbnail URL on the canvas (if provided).
+      if (!empty($canvas['thumbnail'][0]['id']) && is_string($canvas['thumbnail'][0]['id'])) {
+        return (string) $canvas['thumbnail'][0]['id'];
       }
     }
     // v2.
     if (!empty($canvas['images'][0]['resource'])) {
       $res = $canvas['images'][0]['resource'];
-      if (!empty($res['service']['@id'])) {
-        return rtrim($res['service']['@id'], '/') . '/full/' . $size . ',/0/default.jpg';
+      $sid = $res['service']['@id'] ?? ($res['service']['id'] ?? NULL);
+      if ($sid) {
+        return rtrim((string) $sid, '/') . '/full/' . $size . ',/0/default.jpg';
+      }
+      // Fallback: direct thumbnail URL on the canvas
+      // (if provided in v2 context too).
+      if (!empty($canvas['thumbnail']['@id']) && is_string($canvas['thumbnail']['@id'])) {
+        return (string) $canvas['thumbnail']['@id'];
       }
     }
     return NULL;
@@ -180,14 +213,25 @@ class RebuildImagesJob extends AbstractJob {
       $body = $canvas['items'][0]['items'][0]['body'];
       $svc = NULL;
       if (isset($body['service'])) {
-        $svc = $body['service'];
+        $s = $body['service'];
+        if (is_array($s)) {
+          if (array_keys($s) !== range(0, count($s) - 1)) {
+            $svc = $s;
+          }
+          elseif (!empty($s[0]) && is_array($s[0])) {
+            $svc = $s[0];
+          }
+        }
       }
-      elseif (!empty($body['service'][0])) {
-        $svc = $body['service'][0];
+      if ($svc === NULL && isset($body['services']) && is_array($body['services']) && !empty($body['services'][0])) {
+        $svc = $body['services'][0];
       }
       $candidates = [];
-      if (is_array($svc) && !empty($svc['id']) && is_string($svc['id'])) {
-        $candidates[] = (string) $svc['id'];
+      if (is_array($svc)) {
+        $sid = $svc['id'] ?? ($svc['@id'] ?? NULL);
+        if (is_string($sid) && $sid !== '') {
+          $candidates[] = $sid;
+        }
       }
       if (!empty($body['id']) && is_string($body['id'])) {
         $candidates[] = (string) $body['id'];
