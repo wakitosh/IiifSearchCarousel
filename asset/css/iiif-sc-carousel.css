@@ -39,7 +39,8 @@
     background: rgba(0, 0, 0, .4);
     padding: .5rem .75rem;
     border-radius: .25rem;
-    color: #fff
+    color: #fff;
+    box-sizing: border-box;
 }
 
 .iiif-sc__overlay {
@@ -110,5 +111,12 @@
     .iiif-sc__search button {
         padding: .4rem .6rem;
         white-space: nowrap;
+    }
+
+    /* Keep the caption box away from the right edge, symmetric to the left */
+    .iiif-sc__caption {
+        max-width: calc(100% - 2rem);
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 }
