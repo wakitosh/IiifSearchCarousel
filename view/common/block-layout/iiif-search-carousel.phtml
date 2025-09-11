@@ -84,19 +84,64 @@ if ($__hasTrim) {
       ?>
       <?php
         $href = !empty($r['related_url']) ? $r['related_url'] : null;
+        $debugOriginal = $href;
         if (is_string($href)) {
-          if (strpos($href, 'omeka:media:') === 0) {
-            $id = (int) substr($href, strlen('omeka:media:'));
-            $href = $this->url('site/resource', ['controller' => 'media', 'action' => 'show', 'id' => $id], true);
-          }
-          elseif (strpos($href, 'omeka:item:') === 0) {
-            $id = (int) substr($href, strlen('omeka:item:'));
-            $href = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
-          }
+          // Normalize whitespace
+          $href = trim($href);
+          // Internal token strict patterns
+            if (preg_match('/^omeka:media:(\d+)$/', $href, $mm)) {
+              $id = (int) $mm[1];
+              if ($id > 0) {
+                $hrefBuilt = $this->url('site/resource', ['controller' => 'media', 'action' => 'show', 'id' => $id], true);
+                if (!preg_match('#/media/\d+(?:$|/)#', $hrefBuilt)) {
+                  $site = $this->currentSite();
+                  $slug = $site ? $site->slug() : 'site';
+                  $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/media/' . $id;
+                }
+                $href = $hrefBuilt;
+              } else { $href = null; }
+            }
+            elseif (preg_match('/^omeka:item:(\d+)$/', $href, $mi)) {
+              $id = (int) $mi[1];
+              if ($id > 0) {
+                $hrefBuilt = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
+                if (!preg_match('#/item/\d+(?:$|/)#', $hrefBuilt)) {
+                  $site = $this->currentSite();
+                  $slug = $site ? $site->slug() : 'site';
+                  $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/item/' . $id;
+                }
+                $href = $hrefBuilt;
+              } else { $href = null; }
+            }
+            // API or pretty item URL (convert to site route)
+            elseif (preg_match('#/api/items/(\d+)(?:$|[/?])#', $href, $m)) {
+              $id = (int) $m[1];
+              $hrefBuilt = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
+              if (!preg_match('#/item/\d+(?:$|/)#', $hrefBuilt)) {
+                $site = $this->currentSite();
+                $slug = $site ? $site->slug() : 'site';
+                $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/item/' . $id;
+              }
+              $href = $hrefBuilt;
+            }
+            elseif (preg_match('#/(?:s/[^/]+/)?item/(\d+)(?:$|[/?])#', $href, $m)) {
+              $id = (int) $m[1];
+              $hrefBuilt = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
+              if (!preg_match('#/item/\d+(?:$|/)#', $hrefBuilt)) {
+                $site = $this->currentSite();
+                $slug = $site ? $site->slug() : 'site';
+                $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/item/' . $id;
+              }
+              $href = $hrefBuilt;
+            }
+            // Unsafe show pages without id (with optional query/fragment) -> drop
+            elseif (preg_match('#/(?:s/[^/]+/)?(?:item|media)/show(?:[?#].*)?$#', $href)) {
+              $href = null;
+            }
         }
       ?>
       <?php $labelFull = (string) ($r['label'] ?? ''); $labelShort = $__truncate($labelFull); ?>
-      <a class="iiif-sc__slide<?php if ($i === 0) echo ' is-active'; ?>"<?php if ($href): ?> href="<?php echo $this->escapeHtml($href); ?>"<?php endif; ?> aria-label="<?php echo $this->escapeHtml($labelFull); ?>">
+  <a class="iiif-sc__slide<?php if ($i === 0) echo ' is-active'; ?>"<?php if ($href): ?> href="<?php echo $this->escapeHtml($href); ?>"<?php endif; ?> data-orig="<?php echo $this->escapeHtml($debugOriginal); ?>" data-final="<?php echo $this->escapeHtml((string)$href); ?>" aria-label="<?php echo $this->escapeHtml($labelFull); ?>">
         <img src="<?php echo $this->escapeHtml($imgUrl); ?>" alt="" loading="eager" decoding="async">
         <?php if ($labelFull !== ''): ?>
           <span class="iiif-sc__caption"<?php if ($labelShort !== $labelFull): ?> title="<?php echo $this->escapeHtml($labelFull); ?>"<?php endif; ?>>

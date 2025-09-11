@@ -283,31 +283,64 @@ class SearchCarouselBlock extends AbstractBlockLayout {
 
     $siteSlug = $site->slug();
     $buildResourceHref = function ($related) use ($view, $siteSlug) {
-      $href = NULL;
-      if (is_string($related)) {
-        if (strpos($related, 'omeka:media:') === 0) {
-          $id = (int) substr($related, strlen('omeka:media:'));
-          $href = $view->url('site/resource', [
-            'site-slug' => $siteSlug,
-            'controller' => 'media',
-            'action' => 'show',
-            'id' => $id,
-          ]);
+      // Convert internal tokens or known API URLs into site public URLs.
+      // Ensure we never return an id-less /item/show or /media/show link.
+      $makeItem = function (int $id) use ($view, $siteSlug) {
+        if ($id <= 0) {
+          return NULL;
         }
-        elseif (strpos($related, 'omeka:item:') === 0) {
-          $id = (int) substr($related, strlen('omeka:item:'));
-          $href = $view->url('site/resource', [
-            'site-slug' => $siteSlug,
-            'controller' => 'item',
-            'action' => 'show',
-            'id' => $id,
-          ]);
+        $url = $view->url('site/resource', [
+          'site-slug' => $siteSlug,
+          'controller' => 'item',
+          'action' => 'show',
+          'id' => $id,
+        ]);
+        // Fallback if router returns an id-less show path.
+        if (!preg_match('#/item/\d+(?:$|/)#', $url)) {
+          $url = $view->basePath('/s/' . rawurlencode($siteSlug) . '/item/' . $id);
         }
-        else {
-          $href = $related;
+        return $url;
+      };
+      $makeMedia = function (int $id) use ($view, $siteSlug) {
+        if ($id <= 0) {
+          return NULL;
         }
+        $url = $view->url('site/resource', [
+          'site-slug' => $siteSlug,
+          'controller' => 'media',
+          'action' => 'show',
+          'id' => $id,
+        ]);
+        if (!preg_match('#/media/\d+(?:$|/)#', $url)) {
+          $url = $view->basePath('/s/' . rawurlencode($siteSlug) . '/media/' . $id);
+        }
+        return $url;
+      };
+      if (!is_string($related) || $related === '') {
+        return NULL;
       }
-      return $href;
+      $related = trim($related);
+      if (preg_match('/^omeka:item:(\d+)$/', $related, $m)) {
+        return $makeItem((int) $m[1]);
+      }
+      if (preg_match('/^omeka:media:(\d+)$/', $related, $m)) {
+        return $makeMedia((int) $m[1]);
+      }
+      if (preg_match('#/api/items/(\d+)(?:$|[/?])#', $related, $m)) {
+        return $makeItem((int) $m[1]);
+      }
+      // Pretty item or media paths (allow site slug prefix)
+      if (preg_match('#/(?:s/[^/]+/)?item/(\d+)(?:$|[/?])#', $related, $m)) {
+        return $makeItem((int) $m[1]);
+      }
+      if (preg_match('#/(?:s/[^/]+/)?media/(\d+)(?:$|[/?])#', $related, $m)) {
+        return $makeMedia((int) $m[1]);
+      }
+      // Reject unsafe id-less show pages.
+      if (preg_match('#/(?:s/[^/]+/)?(?:item|media)/show(?:[?#].*)?$#', $related)) {
+        return NULL;
+      }
+      return $related;
     };
 
     $html .= "\n<fieldset class=\"field\">\n  <legend>現在の選択リスト（最大50件）</legend>\n  <div class=\"value\">";

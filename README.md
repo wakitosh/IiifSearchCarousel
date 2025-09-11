@@ -47,6 +47,7 @@ These settings control the default behavior and image pool for all carousels. Ac
 - **Title truncation:** Maximum number of characters for link titles. 0 disables truncation. Applies to admin preview and front captions (with full title preserved in tooltip/aria-label).
 - **Selection rules:** Define rules to pick a canvas from a manifest based on the number of canvases it contains. See the "Canvas Selection Rules" section below for details.
 - **Manifest URLs:** A list of IIIF manifest URLs, one per line. The module will fetch images from these sources.
+- **Identifier property term (new):** Property term used when resolving IIIF identifier segments to Omeka items (default `dcterms:identifier`). If your site uses a custom property for stable IDs, enter it here; the module will fall back to `dcterms:identifier` if no match is found.
 - **Auto rebuild:**
     - **Enable:** Check to enable automatic image pool rebuilding.
     - **Interval:** Set the minimum interval (in minutes) between automatic rebuilds. This is a "poor-man's cron" triggered on page visits.
@@ -180,6 +181,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **タイトル省略:** リンクタイトルの最大文字数。0で無効。管理プレビューとフロントのキャプションに適用され、全文はツールチップ/aria-labelで保持されます。
 - **選択ルール:** マニフェストに含まれるキャンバス数に基づいて、表示するキャンバスを選択するルールを定義します。詳細は下記の「キャンバス選択ルール」セクションを参照してください。
 - **マニフェストURL:** IIIFマニフェストのURLを1行に1つずつリストします。モジュールはこれらのソースから画像を取得します。
+- **識別子プロパティ（新）:** IIIF識別子セグメントをOmekaアイテムへ解決する際に使用するプロパティ語（デフォルト `dcterms:identifier`）。サイトで独自の安定IDプロパティを使っている場合に指定します。ヒットしない場合は `dcterms:identifier` にフォールバックします。
 - **自動リビルド:**
     - **有効化:** 画像プールの自動リビルドを有効にする場合にチェックします。
     - **間隔:** 自動リビルドを実行する最小間隔（分）を設定します。これはページ訪問時にトリガーされる簡易的なcron機能です。

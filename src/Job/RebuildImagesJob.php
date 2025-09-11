@@ -14,6 +14,13 @@ use Laminas\Http\Client as HttpClient;
 class RebuildImagesJob extends AbstractJob {
 
   /**
+   * Property term used to resolve items from IIIF identifiers.
+   *
+   * Default: dcterms:identifier.
+   */
+  private string $identifierProperty = 'dcterms:identifier';
+
+  /**
    * Execute the job: rebuild images table from configured manifests.
    */
   public function perform(): void {
@@ -25,6 +32,8 @@ class RebuildImagesJob extends AbstractJob {
     $number = (int) ($settings->get('iiif_sc.number_of_images') ?? 5);
     $size = (int) ($settings->get('iiif_sc.image_size') ?? 1600);
     $rules = (string) ($settings->get('iiif_sc.selection_rules') ?? "1 => 1\n2 => 2\n3+ => random(2-last-1)");
+    // Identifier property (configurable; default dcterms:identifier).
+    $this->identifierProperty = trim((string) ($settings->get('iiif_sc.identifier_property') ?: 'dcterms:identifier'));
     $manifests = array_filter(array_map('trim', preg_split('/\r?\n/', (string) ($settings->get('iiif_sc.manifest_urls') ?? ''))));
     if (!$manifests) {
       $logger->warn('No manifest URLs configured.');
@@ -267,15 +276,50 @@ class RebuildImagesJob extends AbstractJob {
         }
       }
     }
-    // v3 canvas-level links.
+    // v3 canvas-level links and pointers.
+    // Try to derive the parent item from canvas.partOf (points to manifest).
+    if (!empty($canvas['partOf'][0]['id']) && is_string($canvas['partOf'][0]['id'])) {
+      $pid = (string) $canvas['partOf'][0]['id'];
+      if (preg_match('#/(?:iiif|iiif-img)/(?:2|3)/([^/]+)/manifest(?:\.json)?$#', $pid, $m)) {
+        $seg = $m[1];
+        if (ctype_digit($seg)) {
+          return 'omeka:item:' . $seg;
+        }
+        $iid = $this->resolveItemIdFromIdentifier($seg);
+        if ($iid) {
+          return 'omeka:item:' . $iid;
+        }
+      }
+    }
+    // Direct homepage/seeAlso when available.
     if (!empty($canvas['homepage'][0]['id'])) {
-      return (string) $canvas['homepage'][0]['id'];
+      $u = (string) $canvas['homepage'][0]['id'];
+      // Skip unsafe show pages without id.
+      if (!preg_match('#/(?:s/[^/]+/)?(?:item|media)/show/?$#', $u)) {
+        return $u;
+      }
     }
     if (!empty($canvas['seeAlso'][0]['id'])) {
-      return (string) $canvas['seeAlso'][0]['id'];
+      $u = (string) $canvas['seeAlso'][0]['id'];
+      if (!preg_match('#/(?:s/[^/]+/)?(?:item|media)/show/?$#', $u)) {
+        return $u;
+      }
     }
+    // If canvas id includes Omeka's IIIF route, derive the item id
+    // instead of returning the canvas URI.
     if (!empty($canvas['id']) && is_string($canvas['id'])) {
-      return (string) $canvas['id'];
+      $cid = (string) $canvas['id'];
+      if (preg_match('#/(?:iiif|iiif-img)/(?:2|3)/([^/]+)/canvas/#', $cid, $m)) {
+        $seg = $m[1];
+        if (ctype_digit($seg)) {
+          return 'omeka:item:' . $seg;
+        }
+        $iid = $this->resolveItemIdFromIdentifier($seg);
+        if ($iid) {
+          return 'omeka:item:' . $iid;
+        }
+      }
+      // Do not return canvas URI (would lead to 404). Try other fallbacks.
     }
     // v2 canvas-level.
     if (!empty($canvas['related']['@id'])) {
@@ -290,16 +334,112 @@ class RebuildImagesJob extends AbstractJob {
       $manIds[] = (string) $manifest['@id'];
     }
     foreach ($manIds as $mid) {
+      // Omeka IIIF Server default manifest route; segment may be internal id
+      // or external identifier.
+      if (preg_match('#/(?:iiif|iiif-img)/(?:2|3)/([^/]+)/manifest(?:\.json)?$#', $mid, $m)) {
+        $seg = $m[1];
+        if (ctype_digit($seg)) {
+          return 'omeka:item:' . $seg;
+        }
+        $iid = $this->resolveItemIdFromIdentifier($seg);
+        if ($iid) {
+          return 'omeka:item:' . $iid;
+        }
+      }
+      // Some custom routes may include /item/{id}/manifest.
       if (preg_match('#/item/(\d+)/manifest(?:\.json)?$#', $mid, $m)) {
+        return 'omeka:item:' . $m[1];
+      }
+    }
+    // manifest-level seeAlso: prefer Omeka API item link when present.
+    if (!empty($manifest['seeAlso'][0]['id']) && is_string($manifest['seeAlso'][0]['id'])) {
+      $sid = (string) $manifest['seeAlso'][0]['id'];
+      if (preg_match('#/api/items/(\d+)(?:$|[/?])#', $sid, $m)) {
         return 'omeka:item:' . $m[1];
       }
     }
     // manifest-level fallback.
     if (!empty($manifest['homepage'][0]['id'])) {
-      return (string) $manifest['homepage'][0]['id'];
+      $home = (string) $manifest['homepage'][0]['id'];
+      // Avoid using a site-root homepage that matches provider id.
+      $provId = NULL;
+      if (!empty($manifest['provider'][0]['id']) && is_string($manifest['provider'][0]['id'])) {
+        $provId = (string) $manifest['provider'][0]['id'];
+      }
+      if ($provId && rtrim($home, '/') === rtrim($provId, '/')) {
+        // Skip returning the site root; try other fallbacks.
+      }
+      // Also skip unsafe show pages without id.
+      elseif (!preg_match('#/(?:s/[^/]+/)?(?:item|media)/show/?$#', $home)) {
+        return $home;
+      }
     }
     if (!empty($manifest['related']['@id'])) {
       return (string) $manifest['related']['@id'];
+    }
+    return NULL;
+  }
+
+  /**
+   * Resolve an Omeka item id from a IIIF identifier segment.
+   *
+   * Attempts exact match against dcterms:identifier (raw and URL-decoded).
+   */
+  private function resolveItemIdFromIdentifier(string $identifier): ?int {
+    $services = $this->getServiceLocator();
+    /** @var \Omeka\Api\Manager $api */
+    $api = $services->get('Omeka\ApiManager');
+    $cands = [$identifier];
+    $decoded = urldecode($identifier);
+    if ($decoded !== $identifier) {
+      $cands[] = $decoded;
+    }
+    $primaryProperty = $this->identifierProperty ?: 'dcterms:identifier';
+    $fallbackProperty = $primaryProperty === 'dcterms:identifier' ? NULL : 'dcterms:identifier';
+    foreach ($cands as $idv) {
+      try {
+        $ids = $api->search(
+          'items',
+          [
+            'property' => [
+              [
+                'property' => $primaryProperty,
+                'type' => 'eq',
+                'text' => $idv,
+              ],
+            ],
+            'limit' => 1,
+          ],
+          ['returnScalar' => 'id']
+        )->getContent();
+        if (is_array($ids) && !empty($ids[0])) {
+          return (int) $ids[0];
+        }
+        // Fallback: if configured property produced no result,
+        // try dcterms:identifier.
+        if ($fallbackProperty) {
+          $ids = $api->search(
+            'items',
+            [
+              'property' => [
+                [
+                  'property' => $fallbackProperty,
+                  'type' => 'eq',
+                  'text' => $idv,
+                ],
+              ],
+              'limit' => 1,
+            ],
+            ['returnScalar' => 'id']
+          )->getContent();
+          if (is_array($ids) && !empty($ids[0])) {
+            return (int) $ids[0];
+          }
+        }
+      }
+      catch (\Throwable $e) {
+        // Ignore and continue.
+      }
     }
     return NULL;
   }

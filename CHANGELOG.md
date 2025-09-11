@@ -1,15 +1,29 @@
 # Changelog
 
+## 0.2.9 - 2025-09-11
+EN:
+- New global setting `identifier_property` allowing a custom property term for resolving IIIF identifier segments to items (falls back to `dcterms:identifier`).
+- Settings form field added; job resolution now queries configured property then fallback.
+- Documentation updated (README bilingual) for new setting.
+- Style/indent cleanup (PSR-12) in job and admin controller.
+
+JA:
+- 新しい全体設定 `identifier_property` を追加。IIIF識別子セグメントをアイテムへ解決する際のプロパティ語を指定可能（`dcterms:identifier` へフォールバック）。
+- 設定フォームに入力フィールドを追加し、ジョブ側で指定プロパティ→フォールバックの順に検索。
+- README（英日）に該当説明を追記。
+- ジョブおよび管理コントローラのインデント/スタイル（PSR-12）整理。
+
 ## 0.2.8 - 2025-09-11
 EN:
 - IIIF v3 image extraction: Handle `body.service` as object/array and `services` (plural), accept `id`/`@id`, and fall back to canvas `thumbnail` when no ImageService is present. Also accept v2 `service['id']`.
 - Related URL extraction: Consider v3 `body.service` and `body.id` as candidates in addition to existing patterns.
 - Minor PSR-12 style fixes.
 
+
 JA:
 - IIIF v3 画像抽出の強化: `body.service` の配列/オブジェクト両対応や `services`（複数形）をサポートし、`id`/`@id` を許容。ImageService が無い場合は Canvas の `thumbnail` をフォールバックとして使用。v2 でも `service['id']` を許容。
 - 関連URL抽出の改善: 既存の検出に加えて、v3 の `body.service` と `body.id` を候補に追加。
-- 軽微な PSR-12 スタイル修正。
+ - 新しい全体設定 `identifier_property`: IIIF識別子セグメントをアイテムへ解決する際に利用するプロパティ語を指定（ヒットしない場合は `dcterms:identifier` へフォールバック）。
 
 ## 0.2.7 - 2025-09-11
 EN:
