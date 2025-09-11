@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.8 - 2025-09-11
+EN:
+- IIIF v3 image extraction: Handle `body.service` as object/array and `services` (plural), accept `id`/`@id`, and fall back to canvas `thumbnail` when no ImageService is present. Also accept v2 `service['id']`.
+- Related URL extraction: Consider v3 `body.service` and `body.id` as candidates in addition to existing patterns.
+- Minor PSR-12 style fixes.
+
+JA:
+- IIIF v3 画像抽出の強化: `body.service` の配列/オブジェクト両対応や `services`（複数形）をサポートし、`id`/`@id` を許容。ImageService が無い場合は Canvas の `thumbnail` をフォールバックとして使用。v2 でも `service['id']` を許容。
+- 関連URL抽出の改善: 既存の検出に加えて、v3 の `body.service` と `body.id` を候補に追加。
+- 軽微な PSR-12 スタイル修正。
+
 ## 0.2.7 - 2025-09-11
 EN:
 - Mobile caption spacing: On small screens, caption boxes now keep equal left/right insets. Short titles remain content-width; long titles wrap before the right edge with a 1rem margin preserved.
