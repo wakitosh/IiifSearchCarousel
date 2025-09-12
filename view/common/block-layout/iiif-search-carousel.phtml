@@ -154,9 +154,19 @@ if ($__hasTrim) {
 
   <?php if (!empty($showSearch)): ?>
     <div class="iiif-sc__overlay">
-      <form class="iiif-sc__search" method="get" action="<?php echo $searchAction; ?>">
-        <input type="search" id="iiif-sc-search-<?php echo (int) $blockId; ?>" name="search" value="<?php echo $searchValue; ?>" placeholder="Search..." aria-label="Search">
-        <button type="submit">Search</button>
+      <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="Carousel search form">
+        <input type="search" id="multi-search-input" name="search" value="<?php echo $searchValue; ?>" placeholder="Search..." aria-label="Search keywords" pattern=".*\S.*" required class="search-form__input">
+        <fieldset class="multi-search-logic">
+          <legend class="show-for-sr">Logic</legend>
+          <label class="logic-option">
+            <input type="radio" name="logic" value="and" checked> AND
+          </label>
+          <label class="logic-option">
+            <input type="radio" name="logic" value="or"> OR
+          </label>
+        </fieldset>
+        <button type="submit" class="button">Search</button>
+        <div id="multi-search-hidden" aria-hidden="true" style="display:none"></div>
       </form>
     </div>
   <?php endif; ?>
