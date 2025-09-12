@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.10 - 2025-09-12
+EN:
+- Mobile: Widen overlay search on small screens while capping to container, allow wrapping and right-align wrapped controls (AND/OR + button).
+- Unify overlay search form classes/structure with theme header search so shared JS/CSS apply consistently.
+
+JA:
+- モバイル: 小画面でオーバーレイ検索を広げつつコンテナ幅に収め、折り返し時に（AND/OR＋ボタン）を右寄せで整列。
+- オーバーレイ検索フォームのクラス/構造をテーマのヘッダー検索と統一し、共通のJS/CSSを適用。
+
 ## 0.2.9 - 2025-09-11
 EN:
 - New global setting `identifier_property` allowing a custom property term for resolving IIIF identifier segments to items (falls back to `dcterms:identifier`).
