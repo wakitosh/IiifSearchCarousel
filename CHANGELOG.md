@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.11 - 2025-09-12
+EN:
+- Standalone multi-search: Load an internal enhancer (`iiif-sc-multi-search.js`) so the overlay search works without relying on a specific theme.
+
+JA:
+- スタンドアロンのマルチ検索: モジュール内スクリプト（`iiif-sc-multi-search.js`）を読み込むことで、特定テーマに依存せずオーバーレイ検索が動作するようにしました。
+
 ## 0.2.10 - 2025-09-12
 EN:
 - Mobile: Widen overlay search on small screens while capping to container, allow wrapping and right-align wrapped controls (AND/OR + button).
