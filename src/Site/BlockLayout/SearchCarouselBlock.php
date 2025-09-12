@@ -107,10 +107,10 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     // Title truncation length (front captions/aria). 0 = no truncation.
     $truncateLen = (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0);
 
-  $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-carousel.js', 'IiifSearchCarousel'));
-  // Load a minimal multi-search enhancer so the overlay search works standalone
-  // even if the active theme does not provide its own multi-search script.
-  $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-multi-search.js', 'IiifSearchCarousel'));
+    $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-carousel.js', 'IiifSearchCarousel'));
+    // Load a minimal multi-search enhancer so the overlay search works standalone
+    // even if the active theme does not provide its own multi-search script.
+    $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-multi-search.js', 'IiifSearchCarousel'));
     $view->headLink()->appendStylesheet($view->assetUrl('css/iiif-sc-carousel.css', 'IiifSearchCarousel'));
 
     // Resource targets for search (items, media, item-set). Allow multiple.

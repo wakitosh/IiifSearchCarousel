@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.12 - 2025-09-12
+EN:
+- CSS: Prevent line breaks between radio and label text in overlay search logic controls.
+
+JA:
+- CSS: オーバーレイ検索の論理（AND/OR）で、ラジオボタンとラベルの間の改行を禁止。
+
 ## 0.2.11 - 2025-09-12
 EN:
 - Standalone multi-search: Load an internal enhancer (`iiif-sc-multi-search.js`) so the overlay search works without relying on a specific theme.

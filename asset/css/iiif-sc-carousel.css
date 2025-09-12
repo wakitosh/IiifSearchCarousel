@@ -67,6 +67,20 @@
     flex-wrap: nowrap
 }
 
+/* Prevent line breaks between radio and label text */
+.iiif-sc__search .multi-search-logic {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.iiif-sc__search .logic-option {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    white-space: nowrap;
+}
+
 .iiif-sc__search input {
     flex: 1 1 auto;
     min-width: 0;
