@@ -100,7 +100,8 @@
 .iiif-sc__controls {
     display: flex;
     gap: .5rem;
-    align-items: stretch; /* match tallest child (input) */
+    align-items: stretch;
+    /* match tallest child (input) */
     width: 100%;
 }
 
@@ -111,16 +112,17 @@
 
 .iiif-sc__controls .multi-search-logic {
     flex: 0 0 auto;
-    display: flex; /* ensure flex context for justify-content */
-    justify-content: flex-start;
-    align-items: center;
+    display: flex;
+    align-items: flex-start;
 }
 
 .iiif-sc__controls .button {
     flex: 0 0 auto;
-    align-self: stretch; /* match input height */
+    align-self: stretch;
+    /* match input height */
     display: inline-flex;
-    align-items: center; /* center label vertically */
+    align-items: center;
+    /* center label vertically */
 }
 
 /* Tablet: keep controls on one line, compress gaps */
@@ -242,7 +244,12 @@
 }
 
 .iiif-sc__search.search-form.search-form--inline label {
-    line-height: 0.85;
+    line-height: 1; /* standard line-height to align with inputs/buttons */
+}
+
+/* Slight downward nudge so radios/labels align visually with input/button */
+.iiif-sc__controls .multi-search-logic {
+    padding-top: 1px;
 }
 
 /* Mobile adjustments */
