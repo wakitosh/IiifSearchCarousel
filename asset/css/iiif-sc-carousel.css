@@ -103,6 +103,38 @@
     }
 }
 
+/* Examples under the input inside the form */
+.iiif-sc__inputwrap {
+    width: 100%;
+}
+
+.iiif-sc__examples {
+    margin-top: .4rem;
+    font-size: .9em;
+    color: #333;
+    line-height: 1.4;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .4rem;
+}
+
+.iiif-sc__examples-label {
+    color: #444;
+    margin-right: .25rem;
+}
+
+.iiif-sc__example {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+.iiif-sc__example:hover,
+.iiif-sc__example:focus {
+    text-decoration: underline;
+}
+
+.iiif-sc__sep { color: #666; }
+
 /* Mobile adjustments */
 @media (max-width: 600px) {
     .iiif-sc__overlay {

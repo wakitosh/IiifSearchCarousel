@@ -161,6 +161,41 @@ if ($__hasTrim) {
     <div class="iiif-sc__overlay">
       <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="Carousel search form">
   <input type="search" id="multi-search-input" name="search" value="<?php echo $searchValue; ?>" placeholder="<?php echo $this->escapeHtml($__placeholder); ?>" aria-label="Search keywords" pattern=".*\S.*" required class="search-form__input"<?php if ($__isJa): ?> oninvalid="this.setCustomValidity('キーワードを入力してください')" oninput="this.setCustomValidity('')"<?php endif; ?>>
+        <div class="iiif-sc__inputwrap">
+          <?php if (!empty($exampleTerms) && is_array($exampleTerms)): ?>
+            <?php
+              $labelExample = $__isJa ? '例えば：' : 'For example:';
+              $controllerMap = [
+                'items' => 'item',
+                'media' => 'media',
+                'item_sets' => 'item-set',
+              ];
+              $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
+              $controller = $controllerMap[$initialTarget] ?? 'item';
+              $baseUrl = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
+              $short8 = function ($s) {
+                $s = (string) $s;
+                if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+                  return (mb_strlen($s, 'UTF-8') > 8)
+                    ? (mb_substr($s, 0, 8, 'UTF-8') . '…')
+                    : $s;
+                }
+                return (strlen($s) > 8) ? (substr($s, 0, 8) . '…') : $s;
+              };
+            ?>
+            <div class="iiif-sc__examples" aria-label="<?php echo $this->escapeHtml($labelExample); ?>">
+              <span class="iiif-sc__examples-label"><?php echo $this->escapeHtml($labelExample); ?></span>
+              <?php foreach ($exampleTerms as $i => $term): ?>
+                <?php
+                  $q = (string) $term;
+                  $href = $baseUrl . '?search=' . rawurlencode($q);
+                  $display = $short8($q);
+                ?>
+                <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($q); ?>"><?php echo $this->escapeHtml($display); ?></a><?php if ($i < count($exampleTerms) - 1): ?><span class="iiif-sc__sep">, </span><?php endif; ?>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
         <fieldset class="multi-search-logic">
           <legend class="show-for-sr">Logic</legend>
           <label class="logic-option">
@@ -173,29 +208,6 @@ if ($__hasTrim) {
         <button type="submit" class="button"><?php echo $this->escapeHtml($__buttonLabel); ?></button>
         <div id="multi-search-hidden" aria-hidden="true" style="display:none"></div>
       </form>
-      <?php if (!empty($exampleTerms) && is_array($exampleTerms)): ?>
-        <?php
-          $labelExample = $__isJa ? '例えば：' : 'For example:';
-          $controllerMap = [
-            'items' => 'item',
-            'media' => 'media',
-            'item_sets' => 'item-set',
-          ];
-          $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
-          $controller = $controllerMap[$initialTarget] ?? 'item';
-          $baseUrl = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
-        ?>
-        <div class="iiif-sc__examples" aria-label="<?php echo $this->escapeHtml($labelExample); ?>">
-          <span class="iiif-sc__examples-label"><?php echo $this->escapeHtml($labelExample); ?></span>
-          <?php foreach ($exampleTerms as $i => $term): ?>
-            <?php
-              $q = (string) $term;
-              $href = $baseUrl . '?search=' . rawurlencode($q);
-            ?>
-            <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>"><?php echo $this->escapeHtml($q); ?></a><?php if ($i < count($exampleTerms) - 1): ?><span class="iiif-sc__sep">, </span><?php endif; ?>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
     </div>
   <?php endif; ?>
 
