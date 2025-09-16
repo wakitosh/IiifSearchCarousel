@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.14 - 2025-09-16
+EN:
+- Overlay search CSS tweaks (post-0.2.13):
+	- Fine-tune label line-height to 1.1 for better vertical alignment with inputs/buttons.
+	- Adjust radio group alignment using auto margins for more consistent optical centering.
+
+JA:
+- オーバーレイ検索のCSS微調整（0.2.13直後）:
+	- ラベルの行高を 1.1 にし、入力/ボタンとの縦位置をわずかに最適化。
+	- ラジオグループの縦位置を auto マージンで調整し、見た目の中心が安定するように調整。
+
 ## 0.2.13 - 2025-09-16
 EN:
 - Overlay search UX:
