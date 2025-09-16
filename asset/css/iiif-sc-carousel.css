@@ -131,10 +131,23 @@
 
 /* Mobile: tighten gaps a bit */
 @media (max-width: 600px) {
-    .iiif-sc__controls { gap: .35rem; }
-    .iiif-sc__controls .logic-option { font-size: .9em; }
-    .iiif-sc__controls .button { padding: .4rem .6rem; }
-    .iiif-sc__controls .search-form__input { flex: 1 1 45%; min-width: 0; }
+    .iiif-sc__controls { gap: .3rem; }
+    .iiif-sc__controls .search-form__input {
+        flex: 1 1 30%;
+        min-width: 0;
+        max-width: 50%;
+    }
+    .iiif-sc__controls .multi-search-logic { gap: .3rem; white-space: nowrap; }
+    .iiif-sc__controls .logic-option { font-size: .85em; }
+    .iiif-sc__controls .button { padding: .35rem .5rem; font-size: .95em; }
+}
+
+/* Extra small devices (e.g., 360px width) */
+@media (max-width: 380px) {
+    .iiif-sc__controls { gap: .25rem; }
+    .iiif-sc__controls .search-form__input { flex-basis: 28%; max-width: 48%; }
+    .iiif-sc__controls .logic-option { font-size: .8em; }
+    .iiif-sc__controls .button { padding: .3rem .45rem; font-size: .9em; }
 }
 
 /* Medium adjustments */
