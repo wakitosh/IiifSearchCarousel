@@ -1,13 +1,23 @@
 <?php
-$this->headTitle('IIIF Search Carousel');
+// Simple locale check: ja vs others.
+$locale = (string) \Locale::getDefault();
+$isJa = (strpos(strtolower($locale), 'ja') === 0);
+
+$title = $isJa ? 'IIIFサーチ・カルーセル' : 'IIIF Search Carousel';
+$desc = $isJa
+  ? '検索テキストボックスと背景カルーセルの設定です。'
+  : 'Settings for the search textbox with background carousel.';
+$btn = $isJa ? '今すぐ再生成' : 'Rebuild now';
+
+$this->headTitle($title);
 ?>
 <div class="iiif-sc-admin">
-  <h1>IIIF Search Carousel</h1>
-  <p>Settings for the search textbox with background carousel.</p>
+  <h1><?php echo $this->escapeHtml($title); ?></h1>
+  <p><?php echo $this->escapeHtml($desc); ?></p>
   <?php echo $this->form()->openTag($form); ?>
     <?php echo $this->formCollection($form, false); ?>
   <?php echo $this->form()->closeTag(); ?>
   <p>
-    <a class="button" href="<?php echo $this->url('iiif-search-carousel-admin/rebuild'); ?>">Rebuild now</a>
+    <a class="button" href="<?php echo $this->url('iiif-search-carousel-admin/rebuild'); ?>"><?php echo $this->escapeHtml($btn); ?></a>
   </p>
 </div>
