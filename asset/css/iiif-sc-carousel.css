@@ -244,7 +244,7 @@
 }
 
 .iiif-sc__search.search-form.search-form--inline label {
-    line-height: 1.1;
+    line-height: 1;
     /* standard line-height to align with inputs/buttons */
 }
 
