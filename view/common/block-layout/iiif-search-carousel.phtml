@@ -203,7 +203,7 @@ if ($__hasTrim) {
                   $href = $baseUrl . '?search=' . rawurlencode($q);
                   $display = $short8($q);
                 ?>
-                <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($q); ?>"><?php echo $this->escapeHtml($display); ?></a><?php if ($i < count($exampleTerms) - 1): ?><span class="iiif-sc__sep">, </span><?php endif; ?>
+                <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($q); ?>"><?php echo $this->escapeHtml($display); ?></a>
               <?php endforeach; ?>
             </div>
           </div>

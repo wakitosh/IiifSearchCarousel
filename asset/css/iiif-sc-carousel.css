@@ -117,26 +117,23 @@
     flex: 0 0 auto;
 }
 
-/* Tablet: wrap controls to two rows (input full width on first row) */
+/* Tablet: keep controls on one line, compress gaps */
 @media (max-width: 900px) {
     .iiif-sc__controls {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: .4rem;
     }
     .iiif-sc__controls .search-form__input {
-        flex: 1 1 100%;
-    }
-    .iiif-sc__controls .multi-search-logic,
-    .iiif-sc__controls .button {
-        order: 2;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 }
 
 /* Mobile: tighten gaps a bit */
 @media (max-width: 600px) {
-    .iiif-sc__controls {
-        gap: .35rem;
-    }
+    .iiif-sc__controls { gap: .35rem; }
+    .iiif-sc__controls .logic-option { font-size: .9em; }
+    .iiif-sc__controls .button { padding: .4rem .6rem; }
 }
 
 /* Medium adjustments */
@@ -176,7 +173,10 @@
     text-decoration: underline;
 }
 
-.iiif-sc__sep { color: #666; }
+.iiif-sc__examples .iiif-sc__example + .iiif-sc__example::before {
+    content: ", ";
+    color: #666;
+}
 
 /* Ensure examples appear on their own row below the controls */
 .iiif-sc__examples-row {
