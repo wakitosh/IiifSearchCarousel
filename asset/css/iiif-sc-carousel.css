@@ -64,7 +64,7 @@
     max-width: clamp(320px, 60vw, 720px);
     box-sizing: border-box;
     align-items: center;
-    flex-wrap: nowrap
+    flex-wrap: wrap
 }
 
 /* Prevent line breaks between radio and label text */
@@ -134,6 +134,12 @@
 }
 
 .iiif-sc__sep { color: #666; }
+
+/* Ensure examples appear on their own row below the controls */
+.iiif-sc__examples-row {
+    flex: 1 1 100%;
+    margin-top: .35rem;
+}
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
