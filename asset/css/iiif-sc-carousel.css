@@ -134,6 +134,7 @@
     .iiif-sc__controls { gap: .35rem; }
     .iiif-sc__controls .logic-option { font-size: .9em; }
     .iiif-sc__controls .button { padding: .4rem .6rem; }
+    .iiif-sc__controls .search-form__input { flex: 1 1 45%; min-width: 0; }
 }
 
 /* Medium adjustments */
@@ -155,7 +156,8 @@
     line-height: 1.4;
     display: flex;
     flex-wrap: wrap;
-    gap: .25rem .4rem;
+    column-gap: .25rem;
+    row-gap: .25rem;
 }
 
 .iiif-sc__examples-label {
@@ -163,20 +165,14 @@
     margin-right: .25rem;
 }
 
-.iiif-sc__example {
-    color: #1a73e8;
-    text-decoration: none;
-}
+.iiif-sc__example { color: #1a73e8; }
 
 .iiif-sc__example:hover,
 .iiif-sc__example:focus {
     text-decoration: underline;
 }
-
-.iiif-sc__examples .iiif-sc__example + .iiif-sc__example::before {
-    content: ", ";
-    color: #666;
-}
+.iiif-sc__examples .iiif-sc__example::after { content: ","; color: #666; }
+.iiif-sc__examples .iiif-sc__example:last-child::after { content: ""; }
 
 /* Ensure examples appear on their own row below the controls */
 .iiif-sc__examples-row {

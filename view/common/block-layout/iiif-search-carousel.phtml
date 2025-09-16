@@ -201,7 +201,9 @@ if ($__hasTrim) {
                 <?php
                   $q = (string) $term;
                   $href = $baseUrl . '?search=' . rawurlencode($q);
-                  $display = $short8($q);
+                  // Remove half-width brackets [] () <> from display only.
+                  $qDisplay = preg_replace('/[\[\]\(\)\<\>]/u', '', $q);
+                  $display = $short8($qDisplay);
                 ?>
                 <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($q); ?>"><?php echo $this->escapeHtml($display); ?></a>
               <?php endforeach; ?>
