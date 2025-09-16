@@ -100,7 +100,7 @@
 .iiif-sc__controls {
     display: flex;
     gap: .5rem;
-    align-items: center;
+    align-items: stretch; /* match tallest child (input) */
     width: 100%;
 }
 
@@ -111,11 +111,16 @@
 
 .iiif-sc__controls .multi-search-logic {
     flex: 0 0 auto;
+    display: flex; /* ensure flex context for justify-content */
     justify-content: flex-start;
+    align-items: center;
 }
 
 .iiif-sc__controls .button {
     flex: 0 0 auto;
+    align-self: stretch; /* match input height */
+    display: inline-flex;
+    align-items: center; /* center label vertically */
 }
 
 /* Tablet: keep controls on one line, compress gaps */
@@ -124,6 +129,7 @@
         flex-wrap: nowrap;
         gap: .4rem;
     }
+
     .iiif-sc__controls .search-form__input {
         flex: 1 1 auto;
         min-width: 0;
@@ -132,24 +138,55 @@
 
 /* Mobile: tighten gaps a bit */
 @media (max-width: 600px) {
-    .iiif-sc__controls { gap: .3rem; }
+    .iiif-sc__controls {
+        gap: .3rem;
+    }
+
     .iiif-sc__controls .search-form__input {
         flex: 1 1 67%;
         max-width: 67%;
         min-width: 0;
     }
-    .iiif-sc__controls .multi-search-logic { gap: .3rem; white-space: nowrap; justify-content: flex-start; }
-    .iiif-sc__controls .logic-option { font-size: .85em; }
-    .iiif-sc__controls .button { padding: .35rem .5rem; font-size: .95em; }
+
+    .iiif-sc__controls .multi-search-logic {
+        gap: .3rem;
+        white-space: nowrap;
+        justify-content: flex-start;
+    }
+
+    .iiif-sc__controls .logic-option {
+        font-size: .85em;
+    }
+
+    .iiif-sc__controls .button {
+        padding: .35rem .5rem;
+        font-size: .95em;
+    }
 }
 
 /* Extra small devices (e.g., 360px width) */
 @media (max-width: 380px) {
-    .iiif-sc__controls { gap: .25rem; }
-    .iiif-sc__controls .search-form__input { flex: 1 1 64%; max-width: 64%; }
-    .iiif-sc__controls .multi-search-logic { gap: .25rem; }
-    .iiif-sc__controls .logic-option { font-size: .8em; }
-    .iiif-sc__controls .button { padding: .3rem .45rem; font-size: .9em; }
+    .iiif-sc__controls {
+        gap: .25rem;
+    }
+
+    .iiif-sc__controls .search-form__input {
+        flex: 1 1 64%;
+        max-width: 64%;
+    }
+
+    .iiif-sc__controls .multi-search-logic {
+        gap: .25rem;
+    }
+
+    .iiif-sc__controls .logic-option {
+        font-size: .8em;
+    }
+
+    .iiif-sc__controls .button {
+        padding: .3rem .45rem;
+        font-size: .9em;
+    }
 }
 
 /* Medium adjustments */
@@ -180,19 +217,32 @@
     margin-right: .25rem;
 }
 
-.iiif-sc__example { color: #1a73e8; }
+.iiif-sc__example {
+    color: #1a73e8;
+}
 
 .iiif-sc__example:hover,
 .iiif-sc__example:focus {
     text-decoration: underline;
 }
-.iiif-sc__examples .iiif-sc__example::after { content: ","; color: #666; }
-.iiif-sc__examples .iiif-sc__example:last-child::after { content: ""; }
+
+.iiif-sc__examples .iiif-sc__example::after {
+    content: ",";
+    color: #666;
+}
+
+.iiif-sc__examples .iiif-sc__example:last-child::after {
+    content: "";
+}
 
 /* Ensure examples appear on their own row below the controls */
 .iiif-sc__examples-row {
     flex: 1 1 100%;
     margin-top: .35rem;
+}
+
+.iiif-sc__search.search-form.search-form--inline label {
+    line-height: 0.85;
 }
 
 /* Mobile adjustments */
