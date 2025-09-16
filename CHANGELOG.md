@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.16 - 2025-09-16
+EN:
+- Overlay search CSS tweaks (post-0.2.15, style-only):
+	- Normalize control row spacing at 900/600/380px breakpoints; slightly smaller gaps and button paddings on small screens.
+	- Keep input + AND/OR + button heights aligned; minor font-size scaling for tiny devices.
+	- Ensure the examples block always breaks onto its own row below the controls; spacing polished.
+	- Add mobile caption safety (max-width + robust word wrapping) to avoid edge collisions.
+
+JA:
+- オーバーレイ検索のCSS微調整（0.2.15直後／スタイルのみ）:
+	- 900/600/380px の各ブレークポイントでコントロール行の間隔を整え、小画面ではギャップとボタンのパディングをわずかに縮小。
+	- 入力欄／AND/OR／検索ボタンの高さを揃え、超小型端末向けにフォントサイズを微調整。
+	- 例示（例えば〜）のブロックが必ずコントロール列の下の独立行に回るようにし、間隔を調整。
+	- モバイル時のキャプションに安全策（max-width と強めの改行）を追加し、端へのめり込みを防止。
+
+## 0.2.15 - 2025-09-16
+EN:
+- Overlay search CSS tweaks (post-0.2.14):
+	- Fine-tune label line-height to 1 for better vertical alignment with inputs/buttons.
+
+JA:
+- オーバーレイ検索のCSS微調整（0.2.14直後）:
+	- ラベルの行高を 1 にし、入力/ボタンとの縦位置をわずかに最適化。
+
 ## 0.2.14 - 2025-09-16
 EN:
 - Overlay search CSS tweaks (post-0.2.13):
