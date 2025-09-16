@@ -244,12 +244,13 @@
 }
 
 .iiif-sc__search.search-form.search-form--inline label {
-    line-height: 1; /* standard line-height to align with inputs/buttons */
+    line-height: 1.1;
+    /* standard line-height to align with inputs/buttons */
 }
 
 /* Slight downward nudge so radios/labels align visually with input/button */
 .iiif-sc__controls .multi-search-logic {
-    padding-top: 1px;
+    margin: auto;
 }
 
 /* Mobile adjustments */
