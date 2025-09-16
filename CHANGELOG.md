@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.2.13 - 2025-09-16
+EN:
+- Overlay search UX:
+	- Show randomized example query links sourced from Omeka's `fulltext_search` (server-side, error-handled).
+	- Localized label ("For example:") and 8-char truncation for display; remove half-width brackets ()[]<> from example labels only; query string remains full.
+	- Comma separators rendered via CSS ::after (no stray spaces). Example block moved inside the form and placed on a new row below the controls.
+- Validation/i18n:
+	- JA locale: custom required-field message "キーワードを入力してください" for overlay and header search inputs.
+- Layout/responsive:
+	- Keep input + AND/OR + Search button in one line; radios left-aligned; button height matches input.
+	- Mobile overflow fixes and tuning (e.g., input 67% on iPhone 14 Pro Max width, 64% on iPhone SE; extra-small fallbacks). Minor spacing/line-height tweaks.
+- Code style:
+	- PSR-12 friendly formatting, SQL quoting fixes, and comment wrapping.
+
+JA:
+- オーバーレイ検索のUX:
+	- Omeka の `fulltext_search` からランダムな例リンクをサーバ側で生成（例外は握りつぶし）。
+	- ラベル（「例えば：」）をローカライズし、表示は8文字に省略。表示テキストから半角の括弧類 ()[]<> を除去（検索クエリは全文のまま）。
+	- 区切りカンマは CSS の ::after で描画し、不要なスペースを解消。例ブロックはフォーム内に移し、コントロール列の下の新しい行に配置。
+- バリデーション/i18n:
+	- JA ロケール時、オーバーレイ/ヘッダー検索の必須メッセージを「キーワードを入力してください」に上書き。
+- レイアウト/レスポンシブ:
+	- 入力＋AND/OR＋検索ボタンを常に1行で維持。ラジオを左揃え、ボタンの高さを入力に揃える。
+	- モバイルのはみ出しを解消しチューニング（例: iPhone 14 Pro Max で入力67%、iPhone SE で64%、超小型向けのフォールバック）。余白や行高も微調整。
+- スタイル/内部:
+	- PSR-12 に沿った整形、SQL クォートの修正、コメントの折返し等を実施。
+
 ## 0.2.12 - 2025-09-12
 EN:
 - CSS: Prevent line breaks between radio and label text in overlay search logic controls.
