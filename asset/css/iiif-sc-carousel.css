@@ -96,6 +96,27 @@
     flex: 0 0 auto
 }
 
+/* Controls row: input + radio + button on one line */
+.iiif-sc__controls {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    width: 100%;
+}
+
+.iiif-sc__controls .search-form__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.iiif-sc__controls .multi-search-logic {
+    flex: 0 0 auto;
+}
+
+.iiif-sc__controls .button {
+    flex: 0 0 auto;
+}
+
 /* Medium adjustments */
 @media (max-width: 900px) {
     .iiif-sc__search {
