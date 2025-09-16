@@ -107,9 +107,39 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     // Title truncation length (front captions/aria). 0 = no truncation.
     $truncateLen = (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0);
 
+    // Build example keywords from fulltext index (randomized per render).
+    $exampleTerms = [];
+    try {
+      // Collect up to 20 random titles from fulltext index.
+      $sql = "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' ORDER BY RAND() LIMIT 20";
+      $titles = (array) $connection->fetchFirstColumn($sql);
+      foreach ($titles as $t) {
+        $t = trim((string) $t);
+        if ($t === '') {
+          continue;
+        }
+        // Deduplicate preserving order.
+        if (!in_array($t, $exampleTerms, TRUE)) {
+          $exampleTerms[] = $t;
+        }
+        if (count($exampleTerms) >= 8) {
+          // Keep small working set.
+          break;
+        }
+      }
+      // Shuffle and limit to 4 examples.
+      if ($exampleTerms) {
+        shuffle($exampleTerms);
+        $exampleTerms = array_slice($exampleTerms, 0, 4);
+      }
+    }
+    catch (\Throwable $e) {
+      $exampleTerms = [];
+    }
+
     $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-carousel.js', 'IiifSearchCarousel'));
-    // Load a minimal multi-search enhancer so the overlay search works standalone
-    // even if the active theme does not provide its own multi-search script.
+    // Load a minimal multi-search enhancer so the overlay search works
+    // standalone even if the active theme does not provide its own script.
     $view->headScript()->appendFile($view->assetUrl('js/iiif-sc-multi-search.js', 'IiifSearchCarousel'));
     $view->headLink()->appendStylesheet($view->assetUrl('css/iiif-sc-carousel.css', 'IiifSearchCarousel'));
 
@@ -153,6 +183,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       'trimBottom' => $trimBottom,
       'trimLeft' => $trimLeft,
       'showSearch' => (bool) $block->dataValue('show_search', TRUE),
+      'exampleTerms' => $exampleTerms,
     ]);
   }
 

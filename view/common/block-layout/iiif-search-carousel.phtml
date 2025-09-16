@@ -173,6 +173,29 @@ if ($__hasTrim) {
         <button type="submit" class="button"><?php echo $this->escapeHtml($__buttonLabel); ?></button>
         <div id="multi-search-hidden" aria-hidden="true" style="display:none"></div>
       </form>
+      <?php if (!empty($exampleTerms) && is_array($exampleTerms)): ?>
+        <?php
+          $labelExample = $__isJa ? '例えば：' : 'For example:';
+          $controllerMap = [
+            'items' => 'item',
+            'media' => 'media',
+            'item_sets' => 'item-set',
+          ];
+          $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
+          $controller = $controllerMap[$initialTarget] ?? 'item';
+          $baseUrl = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
+        ?>
+        <div class="iiif-sc__examples" aria-label="<?php echo $this->escapeHtml($labelExample); ?>">
+          <span class="iiif-sc__examples-label"><?php echo $this->escapeHtml($labelExample); ?></span>
+          <?php foreach ($exampleTerms as $i => $term): ?>
+            <?php
+              $q = (string) $term;
+              $href = $baseUrl . '?search=' . rawurlencode($q);
+            ?>
+            <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>"><?php echo $this->escapeHtml($q); ?></a><?php if ($i < count($exampleTerms) - 1): ?><span class="iiif-sc__sep">, </span><?php endif; ?>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </div>
   <?php endif; ?>
 
