@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.17 - 2025-09-19
+EN:
+- Settings form: Make ext-intl optional. Guard \Locale usage and fall back to 'en' when not available (no fatal error on environments without intl).
+
+JA:
+- 設定フォーム: ext-intl を必須にしないように変更。\Locale の使用箇所をガードし、未導入環境では 'en' にフォールバック（致命的エラーを回避）。
+
 ## 0.2.16 - 2025-09-16
 EN:
 - Overlay search CSS tweaks (post-0.2.15, style-only):

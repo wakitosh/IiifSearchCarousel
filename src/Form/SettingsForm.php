@@ -18,10 +18,16 @@ class SettingsForm extends Form {
   /**
    * {@inheritDoc} */
   public function init(): void {
-    // Determine locale (ja vs others) using Omeka translator if available.
-    // Note: use \Locale::getDefault() for a simple ja/other split.
-    $locale = (string) \Locale::getDefault();
-    $isJa = (strpos(strtolower((string) $locale), 'ja') === 0);
+    // Determine locale (ja vs others). Avoid ext-intl hard dependency.
+    $locale = 'en';
+    if (class_exists('Locale')) {
+      $locale = (string) \Locale::getDefault();
+    }
+    elseif (function_exists('locale_get_default')) {
+      // Polyfill function name.
+      $locale = (string) locale_get_default();
+    }
+    $isJa = (strpos(strtolower($locale), 'ja') === 0);
 
     // Help text for Selection rules (HTML with line breaks preserved).
     $rulesHelp = $isJa
