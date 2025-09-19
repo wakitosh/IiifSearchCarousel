@@ -145,8 +145,8 @@
     }
 
     .iiif-sc__controls .search-form__input {
-        flex: 1 1 67%;
-        max-width: 67%;
+        flex: 1 1 65%;
+        max-width: 65%;
         min-width: 0;
     }
 
