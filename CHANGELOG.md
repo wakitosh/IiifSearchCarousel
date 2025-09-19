@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.18 - 2025-09-19
+EN:
+- Repo hygiene: Add .gitignore to exclude macOS `.DS_Store` and remove an accidentally tracked file.
+
+JA:
+- リポジトリ整備: macOS の `.DS_Store` を除外する .gitignore を追加し、誤ってトラッキングされたファイルを削除しました。
+
 ## 0.2.17 - 2025-09-19
 EN:
 - Settings form: Make ext-intl optional. Guard \Locale usage and fall back to 'en' when not available (no fatal error on environments without intl).
