@@ -199,11 +199,11 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $form = new Form();
     // Search targets (multiple via checkboxes).
     $chk = new MultiCheckbox('o:block[__blockIndex__][o:data][resource_targets]');
-    $chk->setLabel('Search targets');
+    $chk->setLabel($view->translate('Search targets', 'iiif-search-carousel'));
     $chk->setValueOptions([
-      'items' => 'Items',
-      'media' => 'Media',
-      'item_sets' => 'Item sets',
+      'items' => $view->translate('Items', 'iiif-search-carousel'),
+      'media' => $view->translate('Media', 'iiif-search-carousel'),
+      'item_sets' => $view->translate('Item sets', 'iiif-search-carousel'),
     ]);
     if ($block) {
       $vals = $block->dataValue('resource_targets');
@@ -219,7 +219,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
 
     // Show/hide search box.
     $show = new Checkbox('o:block[__blockIndex__][o:data][show_search]');
-    $show->setLabel('Show search box');
+    $show->setLabel($view->translate('Show search box', 'iiif-search-carousel'));
     $show->setUseHiddenElement(TRUE);
     $show->setCheckedValue('1');
     $show->setUncheckedValue('0');
@@ -232,15 +232,15 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $form->add($show);
 
     $el = new Textarea('o:block[__blockIndex__][o:data][custom_css]');
-    $el->setLabel('Custom CSS (scoped)');
+    $el->setLabel($view->translate('Custom CSS (scoped)', 'iiif-search-carousel'));
     $el->setAttribute('rows', 6);
     // Place the hint directly under the textarea as info text.
     if ($block) {
       $hintId = (int) $block->id();
-      $el->setOption('info', sprintf('Use selector #iiif-sc-%d to scope your CSS to this block.', $hintId));
+      $el->setOption('info', sprintf($view->translate('Use selector %s to scope your CSS to this block.', 'iiif-search-carousel'), '#iiif-sc-' . $hintId));
     }
     else {
-      $el->setOption('info', 'After saving, this block will have a unique id like #iiif-sc-123 for scoping.');
+      $el->setOption('info', sprintf($view->translate('After saving, this block will have a unique id like %s for scoping.', 'iiif-search-carousel'), '#iiif-sc-123'));
     }
     if ($block) {
       $el->setValue((string) $block->dataValue('custom_css', ''));
@@ -248,7 +248,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $form->add($el);
     // Trim controls (percentages per side).
     $top = new Number('o:block[__blockIndex__][o:data][trim_top]');
-    $top->setLabel('Trim top (%)');
+    $top->setLabel($view->translate('Trim top (%)', 'iiif-search-carousel'));
     $top->setAttributes(['min' => 0, 'max' => 100, 'step' => '0.1']);
     if ($block) {
       $top->setValue((string) ($block->dataValue('trim_top', 0)));
@@ -256,7 +256,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $form->add($top);
 
     $right = new Number('o:block[__blockIndex__][o:data][trim_right]');
-    $right->setLabel('Trim right (%)');
+    $right->setLabel($view->translate('Trim right (%)', 'iiif-search-carousel'));
     $right->setAttributes(['min' => 0, 'max' => 100, 'step' => '0.1']);
     if ($block) {
       $right->setValue((string) ($block->dataValue('trim_right', 0)));
@@ -264,7 +264,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $form->add($right);
 
     $bottom = new Number('o:block[__blockIndex__][o:data][trim_bottom]');
-    $bottom->setLabel('Trim bottom (%)');
+    $bottom->setLabel($view->translate('Trim bottom (%)', 'iiif-search-carousel'));
     $bottom->setAttributes(['min' => 0, 'max' => 100, 'step' => '0.1']);
     if ($block) {
       $bottom->setValue((string) ($block->dataValue('trim_bottom', 0)));
@@ -272,7 +272,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $form->add($bottom);
 
     $left = new Number('o:block[__blockIndex__][o:data][trim_left]');
-    $left->setLabel('Trim left (%)');
+    $left->setLabel($view->translate('Trim left (%)', 'iiif-search-carousel'));
     $left->setAttributes(['min' => 0, 'max' => 100, 'step' => '0.1']);
     if ($block) {
       $left->setValue((string) ($block->dataValue('trim_left', 0)));
@@ -377,9 +377,9 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       return $related;
     };
 
-    $html .= "\n<fieldset class=\"field\">\n  <legend>現在の選択リスト（最大50件）</legend>\n  <div class=\"value\">";
+    $html .= "\n<fieldset class=\"field\">\n  <legend>" . $esc($view->translate('Current selection (max 50)', 'iiif-search-carousel')) . "</legend>\n  <div class=\"value\">";
     if ($rows) {
-      $html .= "\n    <table class=\"tablesaw tablesaw-stack\">\n      <thead>\n        <tr>\n          <th>マニフェストのタイトル</th>\n          <th>画像リンク</th>\n          <th>マニフェスト</th>\n          <th>資料ページ</th>\n        </tr>\n      </thead>\n      <tbody>";
+      $html .= "\n    <table class=\"tablesaw tablesaw-stack\">\n      <thead>\n        <tr>\n          <th>" . $esc($view->translate('Manifest title', 'iiif-search-carousel')) . "</th>\n          <th>" . $esc($view->translate('Image link', 'iiif-search-carousel')) . "</th>\n          <th>" . $esc($view->translate('Manifest', 'iiif-search-carousel')) . "</th>\n          <th>" . $esc($view->translate('Page', 'iiif-search-carousel')) . "</th>\n        </tr>\n      </thead>\n      <tbody>";
       foreach ($rows as $r) {
         $label = $r['label'] ?? '';
         $labelShort = $truncateTitle((string) $label);
@@ -389,15 +389,15 @@ class SearchCarouselBlock extends AbstractBlockLayout {
         $relHref = $buildResourceHref($rel);
         $html .= "\n        <tr>"
           . '<td' . ($labelShort !== $label ? ' title="' . $esc($label) . '"' : '') . '>' . $esc($labelShort) . '</td>'
-          . '<td>' . ($img ? '<a href="' . $esc($img) . '" target="_blank" rel="noopener">画像</a>' : '') . '</td>'
-          . '<td>' . ($man ? '<a href="' . $esc($man) . '" target="_blank" rel="noopener">manifest</a>' : '') . '</td>'
-          . '<td>' . ($relHref ? '<a href="' . $esc($relHref) . '" target="_blank" rel="noopener">ページ</a>' : '') . '</td>'
+          . '<td>' . ($img ? '<a href="' . $esc($img) . '" target="_blank" rel="noopener">' . $esc($view->translate('Image', 'iiif-search-carousel')) . '</a>' : '') . '</td>'
+          . '<td>' . ($man ? '<a href="' . $esc($man) . '" target="_blank" rel="noopener">' . $esc($view->translate('manifest', 'iiif-search-carousel')) . '</a>' : '') . '</td>'
+          . '<td>' . ($relHref ? '<a href="' . $esc($relHref) . '" target="_blank" rel="noopener">' . $esc($view->translate('page', 'iiif-search-carousel')) . '</a>' : '') . '</td>'
         . '</tr>';
       }
       $html .= "\n      </tbody>\n    </table>";
     }
     else {
-      $html .= "\n    <p>まだ選択された画像はありません。設定ページでマニフェストを登録し、画像の再構築を実行してください。</p>";
+      $html .= "\n    <p>" . $esc($view->translate('No images selected yet. Register manifests on the settings page and run rebuild.', 'iiif-search-carousel')) . "</p>";
     }
     $html .= "\n  </div>\n</fieldset>";
 

@@ -14,6 +14,18 @@ use IiifSearchCarousel\Site\BlockLayout\SearchCarouselBlock;
 use IiifSearchCarousel\Form\SettingsForm;
 
 return [
+  // Enable module translations via php array files under language/*.php.
+  'translator' => [
+    'translation_file_patterns' => [
+      [
+        'type' => 'phparray',
+        'base_dir' => __DIR__ . '/../language',
+        'pattern' => '%s.php',
+        'text_domain' => 'iiif-search-carousel',
+      ],
+    ],
+  ],
+
   'block_layouts' => [
     'factories' => [
       SearchCarouselBlock::class => function (ContainerInterface $container) {

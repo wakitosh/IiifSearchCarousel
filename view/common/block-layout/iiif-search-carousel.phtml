@@ -10,11 +10,9 @@ $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTarge
 $controller = $controllerMap[$initialTarget] ?? 'item';
 $searchAction = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
 $searchValue = $this->escapeHtml($this->params()->fromQuery('search', ''));
-// Locale for overlay search form (ja vs others)
-$__locale = (string) $this->lang();
-$__isJa = (strpos($__locale, 'ja') === 0);
-$__placeholder = $__isJa ? 'キーワード' : 'Search...';
-$__buttonLabel = $__isJa ? '検索' : 'Search';
+// Use module text domain for strings.
+$__placeholder = $this->plugin('translate')->__invoke('Search…', 'iiif-search-carousel');
+$__buttonLabel = $this->plugin('translate')->__invoke('Search', 'iiif-search-carousel');
 
 // Ensure truncateLen is defined (0 disables truncation)
 $truncateLen = isset($truncateLen) ? (int) $truncateLen : 0;
@@ -159,23 +157,23 @@ if ($__hasTrim) {
 
   <?php if (!empty($showSearch)): ?>
     <div class="iiif-sc__overlay">
-          <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="Carousel search form">
+          <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Carousel search form', 'iiif-search-carousel')); ?>">
             <div class="iiif-sc__controls">
-              <input type="search" id="multi-search-input" name="search" value="<?php echo $searchValue; ?>" placeholder="<?php echo $this->escapeHtml($__placeholder); ?>" aria-label="Search keywords" pattern=".*\S.*" required class="search-form__input"<?php if ($__isJa): ?> oninvalid="this.setCustomValidity('キーワードを入力してください')" oninput="this.setCustomValidity('')"<?php endif; ?>>
+              <input type="search" id="multi-search-input" name="search" value="<?php echo $searchValue; ?>" placeholder="<?php echo $this->escapeHtml($__placeholder); ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Search keywords', 'iiif-search-carousel')); ?>" pattern=".*\S.*" required class="search-form__input">
               <fieldset class="multi-search-logic">
-                <legend class="show-for-sr">Logic</legend>
+                <legend class="show-for-sr"><?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Logic', 'iiif-search-carousel')); ?></legend>
                 <label class="logic-option">
-                  <input type="radio" name="logic" value="and" checked> AND
+                  <input type="radio" name="logic" value="and" checked> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('AND', 'iiif-search-carousel')); ?>
                 </label>
                 <label class="logic-option">
-                  <input type="radio" name="logic" value="or"> OR
+                  <input type="radio" name="logic" value="or"> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('OR', 'iiif-search-carousel')); ?>
                 </label>
               </fieldset>
               <button type="submit" class="button"><?php echo $this->escapeHtml($__buttonLabel); ?></button>
             </div>
         <?php if (!empty($exampleTerms) && is_array($exampleTerms)): ?>
           <?php
-            $labelExample = $__isJa ? '例えば：' : 'For example:';
+            $labelExample = $this->plugin('translate')->__invoke('For example:', 'iiif-search-carousel');
             $controllerMap = [
               'items' => 'item',
               'media' => 'media',

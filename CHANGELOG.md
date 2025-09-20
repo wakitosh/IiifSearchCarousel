@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.19 - 2025-09-20
+EN:
+- i18n (no ext-intl required): Use Omeka's translator with php array loader and a module text domain. Front overlay form (placeholders, button, aria, logic labels) and admin block form/preview labels are now translated based on the Omeka site language. Added language/en_US.php and language/ja.php.
+
+JA:
+- i18n（ext-intl不要）: Omeka の Translator（php 配列ローダ＋モジュールの text domain）に対応。フロントのオーバーレイ検索（プレースホルダー、ボタン、aria、論理ラベル）および管理ブロックフォーム/プレビューのラベルを、Omeka の言語設定に基づいて切り替えます。language/en_US.php と language/ja.php を追加。
+
 ## 0.2.18 - 2025-09-19
 EN:
 - Repo hygiene: Add .gitignore to exclude macOS `.DS_Store` and remove an accidentally tracked file.
