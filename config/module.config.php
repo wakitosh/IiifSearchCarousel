@@ -42,7 +42,10 @@ return [
 
   'form_elements' => [
     'factories' => [
-      SettingsForm::class => InvokableFactory::class,
+      SettingsForm::class => function (ContainerInterface $c) {
+        $translator = $c->get('MvcTranslator');
+        return new SettingsForm($translator);
+      },
     ],
   ],
 
