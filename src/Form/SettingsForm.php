@@ -30,7 +30,9 @@ class SettingsForm extends Form {
   private string $textDomain = 'iiif-search-carousel';
 
   public function __construct(TranslatorInterface $translator) {
-    parent::__construct('iiif-sc-settings');
+    // Note: Csrf validator's session container name only allows [A-Za-z0-9_\\].
+    // Avoid hyphens in the form name to prevent InvalidArgumentException.
+    parent::__construct('iiif_sc_settings');
     $this->translator = $translator;
   }
 
