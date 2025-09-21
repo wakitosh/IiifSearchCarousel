@@ -79,7 +79,9 @@ class ConfigController extends AbstractActionController {
         $settings->set('iiif_sc.auto_rebuild_enable', !empty($values['auto_rebuild_enable']));
         $settings->set('iiif_sc.auto_rebuild_interval', (int) ($values['auto_rebuild_interval'] ?? 60));
 
-        $this->messenger()->addSuccess('Settings saved.');
+        $this->messenger()->addSuccess(
+          $services->get('MvcTranslator')->translate('Settings saved.', 'iiif-search-carousel')
+        );
 
         if (isset($post['rebuild_now'])) {
           $dispatcher = $services->get('Omeka\Job\Dispatcher');

@@ -72,4 +72,5 @@ return [
   'Auto rebuild images periodically (on visit)' => 'Auto rebuild images periodically (on visit)',
   'Auto rebuild interval (minutes)' => 'Auto rebuild interval (minutes)',
   'Save & Rebuild now' => 'Save & Rebuild now',
+  'Settings saved.' => 'Settings saved.',
 ];

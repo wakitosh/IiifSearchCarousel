@@ -72,4 +72,5 @@ return [
   'Auto rebuild images periodically (on visit)' => '一定間隔で自動再生成（アクセス時）',
   'Auto rebuild interval (minutes)' => '自動再生成の間隔（分）',
   'Save & Rebuild now' => '保存して今すぐ再生成',
+  'Settings saved.' => '設定を保存しました。',
 ];

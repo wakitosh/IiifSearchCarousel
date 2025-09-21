@@ -35,7 +35,13 @@ class SearchCarouselBlock extends AbstractBlockLayout {
   /**
    * {@inheritDoc} */
   public function getLabel() {
-    return 'IIIF Search Carousel';
+    try {
+      $translator = $this->services->get('MvcTranslator');
+      return (string) $translator->translate('IIIF Search Carousel', 'iiif-search-carousel');
+    }
+    catch (\Throwable $e) {
+      return 'IIIF Search Carousel';
+    }
   }
 
   /**
