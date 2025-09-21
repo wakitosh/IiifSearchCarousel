@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.21 - 2025-09-21
+EN:
+- Translation polish: Translate block layout label via MvcTranslator and localize admin success message ("Settings saved."). Added missing language keys in `language/en_US.php` and `language/ja.php`. Minor PSR-12 tidy-ups.
+
+JA:
+- 翻訳の仕上げ: ブロックレイアウトのラベルを MvcTranslator 経由で翻訳し、管理の成功メッセージ（「設定を保存しました」）をローカライズ。`language/en_US.php` と `language/ja.php` に不足キーを追加。軽微な PSR-12 整理。
+
 ## 0.2.20 - 2025-09-21
 EN:
 - Settings form fully translated via Omeka's translator: removed all locale detection/branching and eliminated ext-intl dependency paths. Added translation keys for help/labels; code style cleanups.
