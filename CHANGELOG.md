@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.20 - 2025-09-21
+EN:
+- Settings form fully translated via Omeka's translator: removed all locale detection/branching and eliminated ext-intl dependency paths. Added translation keys for help/labels; code style cleanups.
+
+JA:
+- 設定フォームを完全に翻訳対応: ロケール判定・分岐を全廃し、ext-intl に依存しない実装に統一。ヘルプ/ラベルの翻訳キーを追加し、コードスタイルも整理。
+
 ## 0.2.19 - 2025-09-20
 EN:
 - i18n (no ext-intl required): Use Omeka's translator with php array loader and a module text domain. Front overlay form (placeholders, button, aria, logic labels) and admin block form/preview labels are now translated based on the Omeka site language. Added language/en_US.php and language/ja.php.
