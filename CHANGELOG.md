@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.22 - 2025-09-21
+EN:
+- Settings form: Fix Csrf container name error by removing hyphen from form name (`iiif_sc_settings`). Prevents `InvalidArgumentException` when rendering CSRF element.
+
+JA:
+- 設定フォーム: フォーム名のハイフンを除去して CSRF のセッションコンテナ名エラーを解消（`iiif_sc_settings`）。CSRF 要素のレンダリング時に発生する `InvalidArgumentException` を防止。
+
 ## 0.2.21 - 2025-09-21
 EN:
 - Translation polish: Translate block layout label via MvcTranslator and localize admin success message ("Settings saved."). Added missing language keys in `language/en_US.php` and `language/ja.php`. Minor PSR-12 tidy-ups.
