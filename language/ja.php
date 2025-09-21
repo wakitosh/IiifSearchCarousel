@@ -38,4 +38,7 @@ return [
   'Image' => '画像',
   'manifest' => 'manifest',
   'page' => 'page',
+  'IIIF Search Carousel' => 'IIIFサーチ・カルーセル',
+  'Settings for the search textbox with background carousel.' => '検索テキストボックスと背景カルーセルの設定です。',
+  'Rebuild now' => '今すぐ再生成',
 ];

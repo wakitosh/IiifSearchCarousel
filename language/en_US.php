@@ -38,4 +38,7 @@ return [
   'Image' => 'Image',
   'manifest' => 'manifest',
   'page' => 'page',
+  'IIIF Search Carousel' => 'IIIF Search Carousel',
+  'Settings for the search textbox with background carousel.' => 'Settings for the search textbox with background carousel.',
+  'Rebuild now' => 'Rebuild now',
 ];

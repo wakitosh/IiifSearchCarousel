@@ -1,13 +1,9 @@
 <?php
-// Simple locale check: ja vs others.
-$locale = (string) \Locale::getDefault();
-$isJa = (strpos(strtolower($locale), 'ja') === 0);
-
-$title = $isJa ? 'IIIFサーチ・カルーセル' : 'IIIF Search Carousel';
-$desc = $isJa
-  ? '検索テキストボックスと背景カルーセルの設定です。'
-  : 'Settings for the search textbox with background carousel.';
-$btn = $isJa ? '今すぐ再生成' : 'Rebuild now';
+// Use Omeka translator (no ext-intl required).
+$t = $this->plugin('translate');
+$title = $t('IIIF Search Carousel', 'iiif-search-carousel');
+$desc = $t('Settings for the search textbox with background carousel.', 'iiif-search-carousel');
+$btn = $t('Rebuild now', 'iiif-search-carousel');
 
 $this->headTitle($title);
 ?>
@@ -18,6 +14,6 @@ $this->headTitle($title);
     <?php echo $this->formCollection($form, false); ?>
   <?php echo $this->form()->closeTag(); ?>
   <p>
-    <a class="button" href="<?php echo $this->url('iiif-search-carousel-admin/rebuild'); ?>"><?php echo $this->escapeHtml($btn); ?></a>
+  <a class="button" href="<?php echo $this->url('iiif-search-carousel-admin/rebuild'); ?>"><?php echo $this->escapeHtml($btn); ?></a>
   </p>
 </div>
