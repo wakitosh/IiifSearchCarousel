@@ -83,8 +83,117 @@ class RebuildImagesJob extends AbstractJob {
           continue;
         }
 
-        // Build Image API URL.
-        $imageUrl = $this->buildImageUrl($selected, $size);
+        // Get width and height from the canvas info.json and use the
+        // smallest of width, height and the configured size as the
+        // IIIF image size.
+        $canvasServiceId = NULL;
+        // v3 body.service can be an object or an array; try to reuse the
+        // same heuristics as buildImageUrl to find a usable service id.
+        if (!empty($selected['items'][0]['items'][0]['body'])) {
+          $body = $selected['items'][0]['items'][0]['body'];
+          $svc = NULL;
+          if (isset($body['service'])) {
+            $s = $body['service'];
+            if (is_array($s)) {
+              if (array_keys($s) !== range(0, count($s) - 1)) {
+                $svc = $s;
+              }
+              elseif (!empty($s[0]) && is_array($s[0])) {
+                $svc = $s[0];
+              }
+            }
+          }
+          if ($svc === NULL && isset($body['services']) && is_array($body['services']) && !empty($body['services'][0])) {
+            $svc = $body['services'][0];
+          }
+          if (is_array($svc)) {
+            $canvasServiceId = $svc['id'] ?? ($svc['@id'] ?? NULL);
+          }
+          if (!$canvasServiceId && !empty($body['id']) && is_string($body['id'])) {
+            $canvasServiceId = $body['id'];
+          }
+        }
+        // v2 fallback: images[0].resource.service.@id.
+        if (!$canvasServiceId && !empty($selected['images'][0]['resource']['service']['@id'])) {
+          $canvasServiceId = $selected['images'][0]['resource']['service']['@id'];
+        }
+        // As a last resort, try v2 thumbnail @id.
+        if (!$canvasServiceId && !empty($selected['thumbnail']['@id'])) {
+          $canvasServiceId = $selected['thumbnail']['@id'];
+        }
+        $canvasWidth = NULL;
+        $canvasHeight = NULL;
+        if ($canvasServiceId) {
+          try {
+            $http->setUri(rtrim($canvasServiceId, '/') . "/info.json");
+            $infoRes = $http->send();
+            if ($infoRes->isSuccess()) {
+              $infoJson = json_decode($infoRes->getBody(), TRUE);
+              // Prefer top-level width/height when present (original image
+              // dimensions). If missing, try to derive max available width
+              // and height from the sizes[] list (common in some IIIF
+              // servers).
+              if (!empty($infoJson['width'])) {
+                $canvasWidth = (int) $infoJson['width'];
+              }
+              if (!empty($infoJson['height'])) {
+                $canvasHeight = (int) $infoJson['height'];
+              }
+              if ((empty($canvasWidth) || empty($canvasHeight)) && !empty($infoJson['sizes']) && is_array($infoJson['sizes'])) {
+                $maxW = 0;
+                $maxH = 0;
+                foreach ($infoJson['sizes'] as $s) {
+                  if (!empty($s['width'])) {
+                    $maxW = max($maxW, (int) $s['width']);
+                  }
+                  if (!empty($s['height'])) {
+                    $maxH = max($maxH, (int) $s['height']);
+                  }
+                }
+                if (empty($canvasWidth) && $maxW > 0) {
+                  $canvasWidth = $maxW;
+                }
+                if (empty($canvasHeight) && $maxH > 0) {
+                  $canvasHeight = $maxH;
+                }
+              }
+            }
+          }
+          catch (\Throwable $e) {
+            // ignore.
+          }
+        }
+        $targetSize = $size;
+        $targetByWidth = FALSE;
+
+        // Use explicit null checks to avoid falsey issues. For vertical
+        // images (width < height) request by width; otherwise request by
+        // height. Always clamp to the available dimension from info.json
+        // so we never request an upscaling that Cantaloupe would reject.
+        if ($canvasWidth !== NULL && $canvasHeight !== NULL) {
+          if ($canvasWidth < $canvasHeight) {
+            // Vertical: prefer width-based request.
+            $targetByWidth = TRUE;
+            $targetSize = min($canvasWidth, $size);
+          }
+          else {
+            // Horizontal or square: prefer height-based request.
+            $targetByWidth = FALSE;
+            $targetSize = min($canvasHeight, $size);
+          }
+        }
+        elseif ($canvasWidth !== NULL) {
+          // Only width known: request by width.
+          $targetByWidth = TRUE;
+          $targetSize = min($canvasWidth, $size);
+        }
+        elseif ($canvasHeight !== NULL) {
+          // Only height known: request by height.
+          $targetByWidth = FALSE;
+          $targetSize = min($canvasHeight, $size);
+        }
+
+        $imageUrl = $this->buildImageUrl($selected, $targetSize, $targetByWidth);
         if (!$imageUrl) {
           continue;
         }
@@ -96,8 +205,20 @@ class RebuildImagesJob extends AbstractJob {
           $related = $mu;
         }
 
-        // Label.
+        // Get manifest title (best-effort, multi-language aware).
         $label = $this->extractLabel($json['label'] ?? NULL);
+        if (!$label && !empty($json['label'])) {
+          // v3 language map fallback.
+          foreach ($json['label'] as $vals) {
+            if (!empty($vals[0])) {
+              $label = (string) $vals[0];
+              break;
+            }
+          }
+        }
+        if (!$label && !empty($json['label']['@value'])) {
+          $label = (string) $json['label']['@value'];
+        }
 
         $collected[] = [
           'image_url' => $imageUrl,
@@ -151,26 +272,26 @@ class RebuildImagesJob extends AbstractJob {
   /**
    * Build a IIIF Image API URL for a canvas (v2 or v3), at a given size.
    */
-  private function buildImageUrl(array $canvas, int $size): ?string {
+  private function buildImageUrl(array $canvas, int $size, bool $byWidth = FALSE): ?string {
+    // Determine target dimension and build IIIF Image API URL.
+    // If $byWidth is true, the request will be width-based ("{w},").
+    // Otherwise height-based (",{h}").
+    $sizeParam = $byWidth ? ($size . ',') : (',' . $size);
     // v3.
     if (!empty($canvas['items'][0]['items'][0]['body'])) {
       $body = $canvas['items'][0]['items'][0]['body'];
       $svc = NULL;
-      // Normalize service(s) for v3: can be an object or an array of services.
       if (isset($body['service'])) {
         $s = $body['service'];
         if (is_array($s)) {
-          // Associative object with keys like 'id'/'type'.
           if (array_keys($s) !== range(0, count($s) - 1)) {
             $svc = $s;
           }
-          // Indexed array: pick first service.
           elseif (!empty($s[0]) && is_array($s[0])) {
             $svc = $s[0];
           }
         }
       }
-      // Some implementations use 'services' (plural).
       if ($svc === NULL && isset($body['services']) && is_array($body['services']) && !empty($body['services'][0])) {
         $svc = $body['services'][0];
       }
@@ -178,16 +299,14 @@ class RebuildImagesJob extends AbstractJob {
         $sid = $svc['id'] ?? ($svc['@id'] ?? NULL);
         $stype = isset($svc['type']) ? (string) $svc['type'] : '';
         $isImageService = $sid && (
-          ($stype !== '' && stripos($stype, 'ImageService3') !== FALSE)
-          || !empty($svc['profile'])
-          || !empty($svc['@context'])
-        );
+              ($stype !== '' && stripos($stype, 'ImageService3') !== FALSE)
+              || !empty($svc['profile'])
+              || !empty($svc['@context'])
+          );
         if ($isImageService) {
-          return rtrim((string) $sid, '/') . '/full/' . $size . ',/0/default.jpg';
+          return rtrim((string) $sid, '/') . '/full/' . $sizeParam . '/0/default.jpg';
         }
       }
-
-      // Fallback: direct thumbnail URL on the canvas (if provided).
       if (!empty($canvas['thumbnail'][0]['id']) && is_string($canvas['thumbnail'][0]['id'])) {
         return (string) $canvas['thumbnail'][0]['id'];
       }
@@ -197,10 +316,8 @@ class RebuildImagesJob extends AbstractJob {
       $res = $canvas['images'][0]['resource'];
       $sid = $res['service']['@id'] ?? ($res['service']['id'] ?? NULL);
       if ($sid) {
-        return rtrim((string) $sid, '/') . '/full/' . $size . ',/0/default.jpg';
+        return rtrim((string) $sid, '/') . '/full/' . $sizeParam . '/0/default.jpg';
       }
-      // Fallback: direct thumbnail URL on the canvas
-      // (if provided in v2 context too).
       if (!empty($canvas['thumbnail']['@id']) && is_string($canvas['thumbnail']['@id'])) {
         return (string) $canvas['thumbnail']['@id'];
       }

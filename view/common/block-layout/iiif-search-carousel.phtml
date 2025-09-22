@@ -182,14 +182,25 @@ if ($__hasTrim) {
             $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
             $controller = $controllerMap[$initialTarget] ?? 'item';
             $baseUrl = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
-            $short8 = function ($s) {
+            // Formatter for example terms:
+            // - remove half-width brackets from display only
+            // - cut at first half-width or full-width space (drop the remainder)
+            // - truncate to 8 characters without adding ellipsis
+            // - remove commas from the displayed token
+            $formatExample = function ($s) {
               $s = (string) $s;
+              $s = preg_replace('/[\[\]\(\)\<\>]/u', '', $s);
+              // Split at first half-width or full-width space
+              $parts = preg_split('/[\s\x{3000}]/u', $s, 2);
+              $token = $parts[0] ?? '';
               if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-                return (mb_strlen($s, 'UTF-8') > 8)
-                  ? (mb_substr($s, 0, 8, 'UTF-8') . '…')
-                  : $s;
+                $token = (mb_strlen($token, 'UTF-8') > 8) ? mb_substr($token, 0, 8, 'UTF-8') : $token;
+              } else {
+                $token = (strlen($token) > 8) ? substr($token, 0, 8) : $token;
               }
-              return (strlen($s) > 8) ? (substr($s, 0, 8) . '…') : $s;
+              // Remove comma characters from display
+              $token = str_replace([',', '，'], '', $token);
+              return $token;
             };
           ?>
           <div class="iiif-sc__examples-row">
@@ -199,11 +210,10 @@ if ($__hasTrim) {
                 <?php
                   $q = (string) $term;
                   $href = $baseUrl . '?search=' . rawurlencode($q);
-                  // Remove half-width brackets [] () <> from display only.
-                  $qDisplay = preg_replace('/[\[\]\(\)\<\>]/u', '', $q);
-                  $display = $short8($qDisplay);
+                  $display = $formatExample($q);
                 ?>
                 <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($q); ?>"><?php echo $this->escapeHtml($display); ?></a>
+
               <?php endforeach; ?>
             </div>
           </div>

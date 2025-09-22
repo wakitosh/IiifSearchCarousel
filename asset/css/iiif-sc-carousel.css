@@ -29,7 +29,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block
+    display: block;
 }
 
 .iiif-sc__caption {
@@ -204,14 +204,20 @@
 }
 
 .iiif-sc__examples {
+    --iiif-ex-gap: .75rem;
+    /* default gap for examples */
     margin-top: .4rem;
     font-size: .9em;
     color: #333;
     line-height: 1.4;
     display: flex;
     flex-wrap: wrap;
-    column-gap: .25rem;
-    row-gap: .25rem;
+    column-gap: var(--iiif-ex-gap);
+    row-gap: .5rem;
+    /* Disable 'palt' only for this block to avoid glyph width changes */
+    font-feature-settings: normal !important;
+    -webkit-font-feature-settings: normal !important;
+    font-variant-ligatures: none !important;
 }
 
 .iiif-sc__examples-label {
@@ -226,12 +232,60 @@
 }
 
 .iiif-sc__examples .iiif-sc__example::after {
-    content: ",";
+    /* No trailing punctuation; spacing is handled by gaps above */
+    content: "";
     color: #666;
+    margin-right: 0;
 }
 
-.iiif-sc__examples .iiif-sc__example:last-child::after {
-    content: "";
+/* Remove gap only between the label and the first example */
+.iiif-sc__examples-label {
+    margin-right: 0;
+    /* label shouldn't add extra margin */
+}
+
+.iiif-sc__examples-label+.iiif-sc__example {
+    /* Always keep a small fixed gap between the label and the first example.
+       This ensures consistent spacing (.25rem) across all viewport sizes. */
+    margin-left: .25rem;
+}
+
+/* Limit visible examples by viewport width */
+/* Desktop: show up to 5 */
+.iiif-sc__examples .iiif-sc__example:nth-child(n+6) {
+    display: none;
+}
+
+/* Tablet: show up to 4 */
+@media (max-width: 900px) {
+    .iiif-sc__examples {
+        column-gap: .5rem;
+        row-gap: .35rem;
+    }
+
+    .iiif-sc__examples .iiif-sc__example:nth-child(n+5) {
+        display: none;
+    }
+}
+
+/* Mobile: show up to 3 */
+@media (max-width: 600px) {
+    .iiif-sc__examples {
+        column-gap: .4rem;
+        row-gap: .25rem;
+    }
+
+    .iiif-sc__examples .iiif-sc__example:nth-child(n+4) {
+        display: none;
+    }
+}
+
+/* Prevent label and first example from being too tight on small/medium screens */
+@media (max-width: 1024px) {
+    .iiif-sc__examples {
+        /* make gap slightly tighter on small/medium screens (about one half-width space) */
+        column-gap: calc(var(--iiif-ex-gap) - 0.25rem);
+    }
 }
 
 /* Ensure examples appear on their own row below the controls */

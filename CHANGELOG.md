@@ -1,12 +1,23 @@
 # Changelog
 
+## 0.2.23 - 2025-09-22
+EN:
+- IIIF sizing: Ensure requested IIIF image size uses the smaller of the canvas width/height and the configured size; vertical canvases request by width, horizontal by height, and requests are clamped to info.json available sizes to avoid upscaling and Cantaloupe 400 errors.
+- Example links: Render example keywords without trailing commas or ellipses, truncate display to 8 characters at the first internal space, and separate links by spaces.
+- CSS: Remove CSS-inserted commas, set consistent gap between label and first example (.25rem), adjust responsive example spacing and visible counts (desktop/tablet/mobile), and locally disable `palt` font feature for the examples block.
+
+JA:
+- IIIF サイズ: canvas の幅・高さのより小さい方と設定値のうち小さい値を IIIF リクエストに使用するように修正。縦長は幅指定、横長は高さ指定とし、info.json の利用可能サイズを超えてリクエストしないようにクランプ（Cantaloupe の 400 を回避）。
+- 例リンク: 区切りカンマや省略記号を表示しないようにし、表示は最初の内部スペースで切って最大8文字まで表示、リンクはスペースで区切る。
+- CSS: CSS によるカンマ付与を除去し、ラベル→最初の例の間隔を常に .25rem に固定、レスポンシブな例間隔と表示数（PC/タブレット/モバイル）を調整、例示ブロックで `palt` を局所的に無効化。
+
+
 ## 0.2.22 - 2025-09-21
 EN:
 - Settings form: Fix Csrf container name error by removing hyphen from form name (`iiif_sc_settings`). Prevents `InvalidArgumentException` when rendering CSRF element.
 
 JA:
 - 設定フォーム: フォーム名のハイフンを除去して CSRF のセッションコンテナ名エラーを解消（`iiif_sc_settings`）。CSRF 要素のレンダリング時に発生する `InvalidArgumentException` を防止。
-
 ## 0.2.21 - 2025-09-21
 EN:
 - Translation polish: Translate block layout label via MvcTranslator and localize admin success message ("Settings saved."). Added missing language keys in `language/en_US.php` and `language/ja.php`. Minor PSR-12 tidy-ups.
