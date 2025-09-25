@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.25 - 2025-09-25
+EN:
+- Block admin preview: Resource page links are now CleanUrl-aware and use the site's public CleanUrl routes (for both items and media).
+- Example links: The example link tooltip now exactly matches the displayed label (which equals the submitted query). Multilingual stopwords and CJK grapheme-safe truncation remain in effect.
+
+JA:
+- ブロック編集プレビュー: 資料ページへのリンクが CleanUrl に対応し、サイト公開側の CleanUrl ルート（アイテム/メディア）を用いて生成されるようになりました。
+- 例リンク: 例リンクのツールチップ文字列を表示テキストと完全一致させました（送信クエリとも一致）。多言語ストップワードの回避と CJK のグラフェム安全な省略は従来通り適用されます。
+
+## 0.2.24 - 2025-09-25
+EN:
+- Identifier property setting removed from admin. The job now auto-detects the item identifier property id from the CleanUrl module settings (`cleanurl_item.property`) and falls back to `dcterms:identifier` (id 10) when not configured.
+- Admin form/controller cleaned accordingly; docs updated.
+
+JA:
+- 管理画面から「識別子プロパティ」の設定を削除。ジョブは CleanUrl モジュール設定（`cleanurl_item.property`）から識別子プロパティIDを自動検出し、未設定時は `dcterms:identifier`（ID 10）にフォールバックします。
+- 管理フォーム/コントローラの該当箇所を整理し、ドキュメントを更新。
+
 ## 0.2.23 - 2025-09-22
 EN:
 - IIIF sizing: Ensure requested IIIF image size uses the smaller of the canvas width/height and the configured size; vertical canvases request by width, horizontal by height, and requests are clamped to info.json available sizes to avoid upscaling and Cantaloupe 400 errors.
@@ -10,7 +28,6 @@ JA:
 - IIIF サイズ: canvas の幅・高さのより小さい方と設定値のうち小さい値を IIIF リクエストに使用するように修正。縦長は幅指定、横長は高さ指定とし、info.json の利用可能サイズを超えてリクエストしないようにクランプ（Cantaloupe の 400 を回避）。
 - 例リンク: 区切りカンマや省略記号を表示しないようにし、表示は最初の内部スペースで切って最大8文字まで表示、リンクはスペースで区切る。
 - CSS: CSS によるカンマ付与を除去し、ラベル→最初の例の間隔を常に .25rem に固定、レスポンシブな例間隔と表示数（PC/タブレット/モバイル）を調整、例示ブロックで `palt` を局所的に無効化。
-
 
 ## 0.2.22 - 2025-09-21
 EN:
@@ -140,16 +157,10 @@ JA:
 
 ## 0.2.9 - 2025-09-11
 EN:
-- New global setting `identifier_property` allowing a custom property term for resolving IIIF identifier segments to items (falls back to `dcterms:identifier`).
-- Settings form field added; job resolution now queries configured property then fallback.
-- Documentation updated (README bilingual) for new setting.
-- Style/indent cleanup (PSR-12) in job and admin controller.
+- Introduced temporary setting `identifier_property` (now removed in 0.2.24); see 0.2.24 for the CleanUrl-based approach.
 
 JA:
-- 新しい全体設定 `identifier_property` を追加。IIIF識別子セグメントをアイテムへ解決する際のプロパティ語を指定可能（`dcterms:identifier` へフォールバック）。
-- 設定フォームに入力フィールドを追加し、ジョブ側で指定プロパティ→フォールバックの順に検索。
-- README（英日）に該当説明を追記。
-- ジョブおよび管理コントローラのインデント/スタイル（PSR-12）整理。
+- 一時的に `identifier_property` 設定を導入（0.2.24 で撤去）。CleanUrl ベースの自動検出に置き換えました。
 
 ## 0.2.8 - 2025-09-11
 EN:
@@ -161,7 +172,6 @@ EN:
 JA:
 - IIIF v3 画像抽出の強化: `body.service` の配列/オブジェクト両対応や `services`（複数形）をサポートし、`id`/`@id` を許容。ImageService が無い場合は Canvas の `thumbnail` をフォールバックとして使用。v2 でも `service['id']` を許容。
 - 関連URL抽出の改善: 既存の検出に加えて、v3 の `body.service` と `body.id` を候補に追加。
- - 新しい全体設定 `identifier_property`: IIIF識別子セグメントをアイテムへ解決する際に利用するプロパティ語を指定（ヒットしない場合は `dcterms:identifier` へフォールバック）。
 
 ## 0.2.7 - 2025-09-11
 EN:

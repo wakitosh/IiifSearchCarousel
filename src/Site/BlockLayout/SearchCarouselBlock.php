@@ -329,31 +329,23 @@ class SearchCarouselBlock extends AbstractBlockLayout {
         if ($id <= 0) {
           return NULL;
         }
-        $url = $view->url('site/resource', [
+        // CleanUrl対応の resource-id ルートを使用（CleanUrlが有効なら識別子URLに変換).
+        $url = $view->url('site/resource-id', [
           'site-slug' => $siteSlug,
           'controller' => 'item',
-          'action' => 'show',
           'id' => $id,
         ]);
-        // Fallback if router returns an id-less show path.
-        if (!preg_match('#/item/\d+(?:$|/)#', $url)) {
-          $url = $view->basePath('/s/' . rawurlencode($siteSlug) . '/item/' . $id);
-        }
         return $url;
       };
       $makeMedia = function (int $id) use ($view, $siteSlug) {
         if ($id <= 0) {
           return NULL;
         }
-        $url = $view->url('site/resource', [
+        $url = $view->url('site/resource-id', [
           'site-slug' => $siteSlug,
           'controller' => 'media',
-          'action' => 'show',
           'id' => $id,
         ]);
-        if (!preg_match('#/media/\d+(?:$|/)#', $url)) {
-          $url = $view->basePath('/s/' . rawurlencode($siteSlug) . '/media/' . $id);
-        }
         return $url;
       };
       if (!is_string($related) || $related === '') {

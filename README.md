@@ -13,6 +13,8 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
 - **Overlay Search Box:** Provides a clean search interface on top of the carousel.
     - **Multi-Target Search:** Configure searches across Items, Media, and/or Item Sets.
     - **Show/Hide Option:** The search box can be hidden for a display-only carousel.
+    - **AND-only Logic:** The search operates with AND-only semantics. The OR control is displayed for clarity but disabled.
+    - **Example Query Links:** Example links are generated from site search terms. The displayed label equals the submitted query, the tooltip matches the label, multilingual stopwords are skipped, and for CJK text only the first 8 graphemes are shown (no mojibake).
 - **Advanced Image Control:**
     - **Flexible Canvas Selection:** Use powerful rules to select which canvas to display from a manifest (e.g., "the 2nd canvas," "a random canvas from the 3rd to the last-but-one").
     - **IIIF Image Trimming:** Trim images by percentage from any side (top, right, bottom, left) using the `pct:x,y,w,h` region parameter of the IIIF Image API.
@@ -47,7 +49,7 @@ These settings control the default behavior and image pool for all carousels. Ac
 - **Title truncation:** Maximum number of characters for link titles. 0 disables truncation. Applies to admin preview and front captions (with full title preserved in tooltip/aria-label).
 - **Selection rules:** Define rules to pick a canvas from a manifest based on the number of canvases it contains. See the "Canvas Selection Rules" section below for details.
 - **Manifest URLs:** A list of IIIF manifest URLs, one per line. The module will fetch images from these sources.
-- **Identifier property term (new):** Property term used when resolving IIIF identifier segments to Omeka items (default `dcterms:identifier`). If your site uses a custom property for stable IDs, enter it here; the module will fall back to `dcterms:identifier` if no match is found.
+// CleanUrl: Identifier property is auto-detected from the CleanUrl module settings (item property id). No dedicated setting here; falls back to dcterms:identifier when missing.
 - **Auto rebuild:**
     - **Enable:** Check to enable automatic image pool rebuilding.
     - **Interval:** Set the minimum interval (in minutes) between automatic rebuilds. This is a "poor-man's cron" triggered on page visits.
@@ -70,7 +72,7 @@ At the bottom of the block form, an admin-only preview lists up to 50 currently 
 - Manifest link (manifest URL)
 - Resource page link
 
-For internal links detected as `omeka:item:{id}` or `omeka:media:{id}`, the "Resource page" points to the public site page (not the admin UI). If the list is empty, configure manifest URLs in the module settings and run "Rebuild" to populate the pool.
+For internal links detected as `omeka:item:{id}` or `omeka:media:{id}`, the "Resource page" points to the public site page (not the admin UI). Links are CleanUrl-aware: when the CleanUrl module is active, URLs are generated using the site's CleanUrl routing. If the list is empty, configure manifest URLs in the module settings and run "Rebuild" to populate the pool.
 
 ### Search Box Size
 
@@ -147,6 +149,8 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **オーバーレイ検索ボックス:** カルーセルの上にシンプルな検索インターフェースを提供します。
     - **複数対象検索:** アイテム、メディア、アイテムセットを横断して検索するよう設定できます。
     - **表示/非表示オプション:** 検索ボックスを非表示にして、ディスプレイ専用のカルーセルとしても利用可能です。
+    - **AND専用ロジック:** 検索は AND のみで動作します。OR コントロールは視覚的には表示しますが無効化されています。
+    - **例リンク:** サイトの検索語から例リンクを生成します。表示テキスト＝送信クエリで、ツールチップも表示と同一。多言語のストップワードを避け、CJK テキストの場合のみ先頭8グラフェムまでを表示し、文字化けを防ぎます。
 - **高度な画像コントロール:**
     - **柔軟なキャンバス選択:** 「2枚目のキャンバス」「3枚目から最後から2枚目までのうちランダムな1枚」など、マニフェストからどのキャンバスを表示するかを強力なルールで指定できます。
     - **IIIF画像トリミング:** IIIF Image APIの`pct:x,y,w,h`領域パラメータを利用して、画像の上下左右をパーセンテージでトリミングできます。
@@ -181,7 +185,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **タイトル省略:** リンクタイトルの最大文字数。0で無効。管理プレビューとフロントのキャプションに適用され、全文はツールチップ/aria-labelで保持されます。
 - **選択ルール:** マニフェストに含まれるキャンバス数に基づいて、表示するキャンバスを選択するルールを定義します。詳細は下記の「キャンバス選択ルール」セクションを参照してください。
 - **マニフェストURL:** IIIFマニフェストのURLを1行に1つずつリストします。モジュールはこれらのソースから画像を取得します。
-- **識別子プロパティ（新）:** IIIF識別子セグメントをOmekaアイテムへ解決する際に使用するプロパティ語（デフォルト `dcterms:identifier`）。サイトで独自の安定IDプロパティを使っている場合に指定します。ヒットしない場合は `dcterms:identifier` にフォールバックします。
+// CleanUrl: 識別子プロパティは CleanUrl モジュールの設定（アイテムのプロパティID）から自動検出します。ここでの専用設定は不要です。未設定時は dcterms:identifier にフォールバックします。
 - **自動リビルド:**
     - **有効化:** 画像プールの自動リビルドを有効にする場合にチェックします。
     - **間隔:** 自動リビルドを実行する最小間隔（分）を設定します。これはページ訪問時にトリガーされる簡易的なcron機能です。
@@ -204,7 +208,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - マニフェストへのリンク（manifest URL）
 - 資料ページへのリンク
 
-`omeka:item:{id}` / `omeka:media:{id}` と検出された内部リンクは、管理画面ではなくサイト公開ページへのURLに変換して表示します。リストが空の場合は、モジュール設定でマニフェストURLを登録し、「再構築」を実行して画像プールを作成してください。
+`omeka:item:{id}` / `omeka:media:{id}` と検出された内部リンクは、管理画面ではなくサイト公開ページへのURLに変換して表示します。CleanUrl モジュールが有効な場合は CleanUrl に準拠したURLで表示します。リストが空の場合は、モジュール設定でマニフェストURLを登録し、「再構築」を実行して画像プールを作成してください。
 
 ### 検索ボックスのサイズ
 

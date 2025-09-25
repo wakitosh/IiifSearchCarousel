@@ -14,11 +14,12 @@ use Laminas\Http\Client as HttpClient;
 class RebuildImagesJob extends AbstractJob {
 
   /**
-   * Property term used to resolve items from IIIF identifiers.
+   * Property id used to resolve items from IIIF identifiers.
    *
-   * Default: dcterms:identifier.
+   * Defaults to 10 (dcterms:identifier) in a standard install when
+   * CleanUrl is not configured.
    */
-  private string $identifierProperty = 'dcterms:identifier';
+  private int $identifierPropertyId = 10;
 
   /**
    * Execute the job: rebuild images table from configured manifests.
@@ -32,8 +33,8 @@ class RebuildImagesJob extends AbstractJob {
     $number = (int) ($settings->get('iiif_sc.number_of_images') ?? 5);
     $size = (int) ($settings->get('iiif_sc.image_size') ?? 1600);
     $rules = (string) ($settings->get('iiif_sc.selection_rules') ?? "1 => 1\n2 => 2\n3+ => random(2-last-1)");
-    // Identifier property (configurable; default dcterms:identifier).
-    $this->identifierProperty = trim((string) ($settings->get('iiif_sc.identifier_property') ?: 'dcterms:identifier'));
+    // Auto-detect identifier property id (CleanUrl), fallback to 10.
+    $this->identifierPropertyId = $this->getCleanUrlItemPropertyId();
     $manifests = array_filter(array_map('trim', preg_split('/\r?\n/', (string) ($settings->get('iiif_sc.manifest_urls') ?? ''))));
     if (!$manifests) {
       $logger->warn('No manifest URLs configured.');
@@ -511,44 +512,41 @@ class RebuildImagesJob extends AbstractJob {
     if ($decoded !== $identifier) {
       $cands[] = $decoded;
     }
-    $primaryProperty = $this->identifierProperty ?: 'dcterms:identifier';
-    $fallbackProperty = $primaryProperty === 'dcterms:identifier' ? NULL : 'dcterms:identifier';
+    $primaryPropertyId = (int) ($this->identifierPropertyId ?: 10);
+    $fallbackPropertyId = $primaryPropertyId === 10 ? NULL : 10;
     foreach ($cands as $idv) {
       try {
-        $ids = $api->search(
-          'items',
+        $propertyFilter = [
           [
-            'property' => [
-              [
-                'property' => $primaryProperty,
-                'type' => 'eq',
-                'text' => $idv,
-              ],
-            ],
-            'limit' => 1,
+            'property' => $primaryPropertyId,
+            'type' => 'eq',
+            'text' => $idv,
           ],
-          ['returnScalar' => 'id']
-        )->getContent();
+        ];
+        $params = [
+          'property' => $propertyFilter,
+          'limit' => 1,
+        ];
+        $ids = $api->search('items', $params, ['returnScalar' => 'id'])->getContent();
         if (is_array($ids) && !empty($ids[0])) {
           return (int) $ids[0];
         }
+
         // Fallback: if configured property produced no result,
         // try dcterms:identifier.
-        if ($fallbackProperty) {
-          $ids = $api->search(
-            'items',
+        if ($fallbackPropertyId) {
+          $fallbackFilter = [
             [
-              'property' => [
-                [
-                  'property' => $fallbackProperty,
-                  'type' => 'eq',
-                  'text' => $idv,
-                ],
-              ],
-              'limit' => 1,
+              'property' => $fallbackPropertyId,
+              'type' => 'eq',
+              'text' => $idv,
             ],
-            ['returnScalar' => 'id']
-          )->getContent();
+          ];
+          $fallbackParams = [
+            'property' => $fallbackFilter,
+            'limit' => 1,
+          ];
+          $ids = $api->search('items', $fallbackParams, ['returnScalar' => 'id'])->getContent();
           if (is_array($ids) && !empty($ids[0])) {
             return (int) $ids[0];
           }
@@ -559,6 +557,31 @@ class RebuildImagesJob extends AbstractJob {
       }
     }
     return NULL;
+  }
+
+  /**
+   * Get the CleanUrl configured property id for items.
+   *
+   * Returns 10 (dcterms:identifier) when CleanUrl is not installed or not
+   * configured with a property.
+   */
+  private function getCleanUrlItemPropertyId(): int {
+    try {
+      $services = $this->getServiceLocator();
+      /** @var \Omeka\Settings\Settings $settings */
+      $settings = $services->get('Omeka\Settings');
+      $opt = $settings->get('cleanurl_item');
+      if (is_array($opt) && !empty($opt['property'])) {
+        $pid = (int) $opt['property'];
+        if ($pid > 0) {
+          return $pid;
+        }
+      }
+    }
+    catch (\Throwable $e) {
+      // Ignore and use default.
+    }
+    return 10;
   }
 
   /**

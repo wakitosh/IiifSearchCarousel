@@ -49,8 +49,6 @@ return [
   'ACTION: <code>last</code>, <code>random</code>, <code>random(A-B)</code>, <code>random(A-last[-O])</code>, or number (1-based).' => '動作: <code>last</code>、<code>random</code>、<code>random(A-B)</code>、<code>random(A-last[-O])</code>、または番号（1始まり）。',
   'First matching rule is applied; otherwise a random canvas is chosen.' => '最初に一致したルールが適用され、それ以外はランダムに選ばれます。',
   'Examples:' => '例:',
-  'Identifier property term' => '識別子プロパティの語',
-  'Property term used to resolve IIIF identifier segments to Omeka items (default dcterms:identifier).' => 'IIIF識別子のセグメントをOmekaアイテムに解決するためのプロパティ語（既定 dcterms:identifier）。',
   'Number of images' => '画像の枚数',
   'IIIF image size (px)' => 'IIIF画像サイズ（px）',
   'Carousel duration (sec)' => '切替間隔（秒）',

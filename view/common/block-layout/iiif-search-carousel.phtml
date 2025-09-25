@@ -95,46 +95,51 @@ if ($__hasTrim) {
             if (preg_match('/^omeka:media:(\d+)$/', $href, $mm)) {
               $id = (int) $mm[1];
               if ($id > 0) {
-                $hrefBuilt = $this->url('site/resource', ['controller' => 'media', 'action' => 'show', 'id' => $id], true);
-                if (!preg_match('#/media/\d+(?:$|/)#', $hrefBuilt)) {
-                  $site = $this->currentSite();
-                  $slug = $site ? $site->slug() : 'site';
-                  $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/media/' . $id;
-                }
+                $site = $this->currentSite();
+                $slug = $site ? $site->slug() : 'site';
+                // CleanUrl対応の resource-id ルートを使用（CleanUrlが有効なら識別子URLに変換）
+                $hrefBuilt = $this->url('site/resource-id', [
+                  'site-slug' => $slug,
+                  'controller' => 'media',
+                  'id' => $id,
+                ], ['reuse_result_params' => false], false);
                 $href = $hrefBuilt;
               } else { $href = null; }
             }
             elseif (preg_match('/^omeka:item:(\d+)$/', $href, $mi)) {
               $id = (int) $mi[1];
               if ($id > 0) {
-                $hrefBuilt = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
-                if (!preg_match('#/item/\d+(?:$|/)#', $hrefBuilt)) {
-                  $site = $this->currentSite();
-                  $slug = $site ? $site->slug() : 'site';
-                  $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/item/' . $id;
-                }
+                $site = $this->currentSite();
+                $slug = $site ? $site->slug() : 'site';
+                $hrefBuilt = $this->url('site/resource-id', [
+                  'site-slug' => $slug,
+                  'controller' => 'item',
+                  'id' => $id,
+                ], ['reuse_result_params' => false], false);
                 $href = $hrefBuilt;
               } else { $href = null; }
             }
             // API or pretty item URL (convert to site route)
             elseif (preg_match('#/api/items/(\d+)(?:$|[/?])#', $href, $m)) {
               $id = (int) $m[1];
-              $hrefBuilt = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
-              if (!preg_match('#/item/\d+(?:$|/)#', $hrefBuilt)) {
-                $site = $this->currentSite();
-                $slug = $site ? $site->slug() : 'site';
-                $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/item/' . $id;
-              }
+              $site = $this->currentSite();
+              $slug = $site ? $site->slug() : 'site';
+              $hrefBuilt = $this->url('site/resource-id', [
+                'site-slug' => $slug,
+                'controller' => 'item',
+                'id' => $id,
+              ], ['reuse_result_params' => false], false);
               $href = $hrefBuilt;
             }
             elseif (preg_match('#/(?:s/[^/]+/)?item/(\d+)(?:$|[/?])#', $href, $m)) {
               $id = (int) $m[1];
-              $hrefBuilt = $this->url('site/resource', ['controller' => 'item', 'action' => 'show', 'id' => $id], true);
-              if (!preg_match('#/item/\d+(?:$|/)#', $hrefBuilt)) {
-                $site = $this->currentSite();
-                $slug = $site ? $site->slug() : 'site';
-                $hrefBuilt = $this->basePath() . '/s/' . rawurlencode($slug) . '/item/' . $id;
-              }
+              $site = $this->currentSite();
+              $slug = $site ? $site->slug() : 'site';
+              $hrefBuilt = $this->url('site/resource-id', [
+                'site-slug' => $slug,
+                'controller' => 'item',
+                'id' => $id,
+              ], ['reuse_result_params' => false], false);
               $href = $hrefBuilt;
             }
             // Unsafe show pages without id (with optional query/fragment) -> drop
@@ -165,8 +170,9 @@ if ($__hasTrim) {
                 <label class="logic-option">
                   <input type="radio" name="logic" value="and" checked> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('AND', 'iiif-search-carousel')); ?>
                 </label>
-                <label class="logic-option">
-                  <input type="radio" name="logic" value="or"> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('OR', 'iiif-search-carousel')); ?>
+                <?php $tooltipDisabledOr = $this->plugin('translate')->__invoke('OR is currently disabled (search uses AND).', 'iiif-search-carousel'); ?>
+                <label class="logic-option is-disabled" aria-disabled="true" title="<?php echo $this->escapeHtml($tooltipDisabledOr); ?>">
+                  <input type="radio" name="logic" value="or" disabled aria-disabled="true"> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('OR', 'iiif-search-carousel')); ?>
                 </label>
               </fieldset>
               <button type="submit" class="button"><?php echo $this->escapeHtml($__buttonLabel); ?></button>
@@ -184,23 +190,133 @@ if ($__hasTrim) {
             $baseUrl = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
             // Formatter for example terms:
             // - remove half-width brackets from display only
-            // - cut at first half-width or full-width space (drop the remainder)
-            // - truncate to 8 characters without adding ellipsis
-            // - remove commas from the displayed token
+            // - split by half-width or full-width spaces into tokens
+            // - pick the first non-stopword token (multilingual)
+            //   if all tokens are stopwords, fall back to the first token
+            // - CJK (ja/zh) の場合のみ 8 文字に丸める（単語分割しない言語向け）
+            //   欧米系など分かち書き言語は単語途中で切らず（=トークンそのまま）、最初のスペースまでを候補とする
+            // - remove comma characters from the displayed token
             $formatExample = function ($s) {
               $s = (string) $s;
+              // 軽微な括弧の除去（表示のみ）
               $s = preg_replace('/[\[\]\(\)\<\>]/u', '', $s);
-              // Split at first half-width or full-width space
-              $parts = preg_split('/[\s\x{3000}]/u', $s, 2);
-              $token = $parts[0] ?? '';
-              if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-                $token = (mb_strlen($token, 'UTF-8') > 8) ? mb_substr($token, 0, 8, 'UTF-8') : $token;
-              } else {
-                $token = (strlen($token) > 8) ? substr($token, 0, 8) : $token;
+              // 文字化け防止のため、全体の前後にある記号・句読点を安全に除去
+              $s = preg_replace('/^[\p{P}\p{S}\s\x{3000}]+|[\p{P}\p{S}\s\x{3000}]+$/u', '', $s);
+              // Tokenize by space (half- or full-width). Keep all tokens for stopword skipping.
+              $tokens = preg_split('/[\s\x{3000}]+/u', $s, -1, PREG_SPLIT_NO_EMPTY);
+              // Load multilingual stopwords from JSON once (cache in static)
+              static $STOP = null;
+              if ($STOP === null) {
+                $jsonPath = __DIR__ . '/../../../config/stopwords.json';
+                $STOP = [];
+                if (is_readable($jsonPath)) {
+                  $raw = @file_get_contents($jsonPath);
+                  if (is_string($raw) && $raw !== '') {
+                    $dec = json_decode($raw, true);
+                    if (is_array($dec)) { $STOP = $dec; }
+                  }
+                }
+              }
+              // Heuristics: derive candidate languages by script presence
+              $cands = [];
+              $strAll = implode(' ', $tokens);
+              if (preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $strAll)) { $cands[] = 'ja'; }
+              if (preg_match('/[A-Za-z]/', $strAll)) { array_push($cands, 'en', 'de', 'fr', 'es', 'it', 'la'); }
+              if (preg_match('/[\x{0370}-\x{03FF}]/u', $strAll)) { $cands[] = 'el'; }
+              if (!$cands) { $cands = ['en']; }
+              // Merge stopwords for candidates (normalize to lowercase where applicable)
+              $stop = [];
+              foreach ($cands as $lang) {
+                if (!empty($STOP[$lang]) && is_array($STOP[$lang])) {
+                  foreach ($STOP[$lang] as $w) { $stop[$w] = true; }
+                }
+              }
+              $chosen = '';
+              if (!empty($tokens)) {
+                foreach ($tokens as $t) {
+                  // Trim surrounding punctuation for accurate stopword matching
+                  $tStripped = trim($t, ".,;:!?\"'()[]{}<>");
+                  // mbstring 前提で小文字化
+                  $tLower = mb_strtolower($tStripped, 'UTF-8');
+                  // English-family languages are case-insensitive; Japanese/Greek entries are literal
+                  $key1 = $tLower;
+                  $key2 = $tStripped; // for scripts without case
+                  if ($tLower === '' || isset($stop[$key1]) || isset($stop[$key2])) {
+                    continue;
+                  }
+                  $chosen = $tStripped;
+                  break;
+                }
+                if ($chosen === '') {
+                  // All tokens were stopwords: use the first raw token
+                  $chosen = $tokens[0];
+                }
+              }
+              // If no tokens (e.g., only brackets removed), fall back to the original string
+              if ($chosen === '') {
+                $chosen = $s;
+              }
+              // Apply 8-char truncation ONLY for CJK (Japanese/Chinese) content; for space-delimited languages, keep the full token uncut
+              $hasCjk = (bool) preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $strAll);
+              if ($hasCjk) {
+                // グラフェムクラスタ単位の長さ/切り出し（intl不要、PCREの\Xを使用）
+                if (!function_exists('iiif_sc_grapheme_len')) {
+                  function iiif_sc_grapheme_len(string $str): int {
+                    if ($str === '') return 0;
+                    if (preg_match_all('/\X/u', $str, $m)) { return count($m[0]); }
+                    return mb_strlen($str, 'UTF-8');
+                  }
+                }
+                if (!function_exists('iiif_sc_grapheme_sub')) {
+                  function iiif_sc_grapheme_sub(string $str, int $n): string {
+                    if ($n <= 0 || $str === '') return '';
+                    if (preg_match_all('/\X/u', $str, $m)) { return implode('', array_slice($m[0], 0, $n)); }
+                    return mb_substr($str, 0, $n, 'UTF-8');
+                  }
+                }
+
+                // 形態素風に分割して8文字以内で連結（mbstring前提）
+                $jaStop = isset($STOP['ja']) && is_array($STOP['ja']) ? array_fill_keys($STOP['ja'], true) : [];
+                $segmentJa = function (string $text) use ($jaStop): array {
+                  $units = [];
+                  // 連続する 漢字 / ひらがな / カタカナ(長音記号含む) / 英数 / その他1文字 をトークン化
+                  if (preg_match_all('/(?:[\x{4E00}-\x{9FFF}]+|[\x{3040}-\x{309F}]+|[\x{30A0}-\x{30FF}ー]+|[A-Za-z0-9]+|[^\s])/u', $text, $m)) {
+                    foreach ($m[0] as $tok) {
+                      // 前後の記号・句読点をUnicode特性で除去（マルチバイト安全）
+                      $tok = preg_replace('/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/u', '', $tok);
+                      if ($tok === '') { continue; }
+                      // ストップワード（助詞等）はユニットから除外
+                      if (isset($jaStop[$tok])) { continue; }
+                      $units[] = $tok;
+                    }
+                  }
+                  return $units;
+                };
+                $units = $segmentJa($chosen);
+                if ($units) {
+                  $acc = '';
+                  foreach ($units as $u) {
+                    $next = $acc . $u;
+                    if (iiif_sc_grapheme_len($next) <= 8) {
+                      $acc = $next;
+                    } else {
+                      break;
+                    }
+                  }
+                  if ($acc !== '') {
+                    $chosen = $acc;
+                  } else {
+                    // 最初のユニットすら入らない場合は先頭8クラスタにフォールバック
+                    $chosen = iiif_sc_grapheme_sub($chosen, 8);
+                  }
+                } else {
+                  // 分割できなければ先頭8クラスタ
+                  $chosen = iiif_sc_grapheme_sub($chosen, 8);
+                }
               }
               // Remove comma characters from display
-              $token = str_replace([',', '，'], '', $token);
-              return $token;
+              $chosen = str_replace([',', '，'], '', $chosen);
+              return $chosen;
             };
           ?>
           <div class="iiif-sc__examples-row">
@@ -209,10 +325,12 @@ if ($__hasTrim) {
               <?php foreach ($exampleTerms as $i => $term): ?>
                 <?php
                   $q = (string) $term;
-                  $href = $baseUrl . '?search=' . rawurlencode($q);
                   $display = $formatExample($q);
+                  // 実際の検索クエリも表示ラベルと同一にする（空なら元の語にフォールバック）
+                  $query = ($display !== '') ? $display : $q;
+                  $href = $baseUrl . '?search=' . rawurlencode($query);
                 ?>
-                <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($q); ?>"><?php echo $this->escapeHtml($display); ?></a>
+                <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($display); ?>"><?php echo $this->escapeHtml($display); ?></a>
 
               <?php endforeach; ?>
             </div>

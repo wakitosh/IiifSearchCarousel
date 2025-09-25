@@ -41,7 +41,8 @@ class ConfigController extends AbstractActionController {
       'aspect_ratio_w_md' => (int) ($settings->get('iiif_sc.aspect_ratio_w_md') ?? 16),
       'aspect_ratio_h_md' => (int) ($settings->get('iiif_sc.aspect_ratio_h_md') ?? 9),
       'selection_rules' => (string) ($settings->get('iiif_sc.selection_rules') ?? "1 => 1\n2 => 2\n3+ => random(2-last-1)"),
-      'identifier_property' => (string) ($settings->get('iiif_sc.identifier_property') ?? 'dcterms:identifier'),
+      // identifier_property removed: now auto-detected from CleanUrl
+      // settings.
       'truncate_title_length' => (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0),
       'manifest_urls' => (string) ($settings->get('iiif_sc.manifest_urls') ?? ''),
       'auto_rebuild_enable' => (bool) ($settings->get('iiif_sc.auto_rebuild_enable') ?? FALSE),
@@ -73,7 +74,8 @@ class ConfigController extends AbstractActionController {
         $settings->set('iiif_sc.aspect_ratio_w_md', (int) ($values['aspect_ratio_w_md'] ?? 16));
         $settings->set('iiif_sc.aspect_ratio_h_md', (int) ($values['aspect_ratio_h_md'] ?? 9));
         $settings->set('iiif_sc.selection_rules', (string) $values['selection_rules']);
-        $settings->set('iiif_sc.identifier_property', trim((string) ($values['identifier_property'] ?? 'dcterms:identifier')));
+        // identifier_property removed: no longer saved;
+        // CleanUrl settings are used.
         $settings->set('iiif_sc.truncate_title_length', (int) ($values['truncate_title_length'] ?? 0));
         $settings->set('iiif_sc.manifest_urls', (string) $values['manifest_urls']);
         $settings->set('iiif_sc.auto_rebuild_enable', !empty($values['auto_rebuild_enable']));

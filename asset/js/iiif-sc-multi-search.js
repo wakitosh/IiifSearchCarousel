@@ -16,21 +16,29 @@
     function qsa(el, sel) { return Array.from(el.querySelectorAll(sel)); }
 
     function getLogic(form) {
-        const checked = qs(form, 'input[name="logic"]:checked');
-        return checked ? (checked.value === 'or' ? 'or' : 'and') : 'and';
+        // Always enforce AND regardless of UI/localStorage
+        return 'and';
     }
     function persistLogic(form) {
         const radios = qsa(form, 'input[name="logic"]');
-        radios.forEach(r => r.addEventListener('change', () => {
-            try { localStorage.setItem('iiifScMultiSearchLogic', getLogic(form)); } catch (e) { }
-        }));
-        // restore once
+        // Force-check AND and uncheck/disable OR defensively
         try {
-            const saved = localStorage.getItem('iiifScMultiSearchLogic');
-            if (saved) {
-                const tgt = qs(form, 'input[name="logic"][value="' + saved + '"]').checked = true;
-            }
+            const andRadio = qs(form, 'input[name="logic"][value="and"]');
+            const orRadio = qs(form, 'input[name="logic"][value="or"]');
+            if (andRadio) { andRadio.checked = true; }
+            if (orRadio) { orRadio.checked = false; orRadio.disabled = true; }
+            localStorage.setItem('iiifScMultiSearchLogic', 'and');
         } catch (e) { }
+        // Still attach listeners to keep storage in sync if HTML changes later
+        radios.forEach(r => r.addEventListener('change', () => {
+            try { localStorage.setItem('iiifScMultiSearchLogic', 'and'); } catch (e) { }
+            try {
+                const andRadio = qs(form, 'input[name="logic"][value="and"]');
+                const orRadio = qs(form, 'input[name="logic"][value="or"]');
+                if (andRadio) { andRadio.checked = true; }
+                if (orRadio) { orRadio.checked = false; }
+            } catch (e) { }
+        }));
     }
 
     function clearHidden(container) {
@@ -51,7 +59,7 @@
         clearHidden(hiddenBox);
         const raw = input ? String(input.value || '') : '';
         const tokens = tokenize(raw);
-        const logic = getLogic(form);
+        const logic = getLogic(form); // always 'and'
         // sentinel to avoid reprocessing by other scripts
         appendHidden(hiddenBox, 'multi_search_applied', '1');
         if (tokens.length <= 1) {
@@ -66,7 +74,7 @@
             appendHidden(hiddenBox, base + '[property]', '');
             appendHidden(hiddenBox, base + '[type]', 'in');
             appendHidden(hiddenBox, base + '[text]', t);
-            appendHidden(hiddenBox, base + '[joiner]', logic === 'or' ? 'or' : 'and');
+            appendHidden(hiddenBox, base + '[joiner]', 'and');
         });
         return true;
     }

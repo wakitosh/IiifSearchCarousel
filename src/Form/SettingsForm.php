@@ -6,7 +6,6 @@ use Laminas\Form\Element\Checkbox;
 use Laminas\Form\Element\Number;
 use Laminas\Form\Element\Select;
 use Laminas\Form\Element\Submit;
-use Laminas\Form\Element\Text;
 use Laminas\Form\Element\Textarea;
 use Laminas\Form\Form;
 use Laminas\I18n\Translator\TranslatorInterface;
@@ -82,17 +81,6 @@ class SettingsForm extends Form {
     ]);
 
     // Pool sizing.
-    $this->add([
-      'name' => 'identifier_property',
-      'type' => Text::class,
-      'options' => [
-        'label' => $tr('Identifier property term'),
-        'info' => $tr('Property term used to resolve IIIF identifier segments to Omeka items (default dcterms:identifier).'),
-      ],
-      'attributes' => [
-        'placeholder' => 'dcterms:identifier',
-      ],
-    ]);
     $this->add([
       'name' => 'number_of_images',
       'type' => Number::class,

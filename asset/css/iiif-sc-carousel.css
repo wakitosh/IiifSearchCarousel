@@ -81,6 +81,16 @@
     white-space: nowrap;
 }
 
+/* Visually disabled logic option (kept visible) */
+.iiif-sc__search .logic-option.is-disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.iiif-sc__search .logic-option.is-disabled input[disabled] {
+    pointer-events: none;
+}
+
 .iiif-sc__search input {
     flex: 1 1 auto;
     min-width: 0;
