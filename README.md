@@ -15,8 +15,6 @@ Overlay search and examples (desktop)
 
 日本語UI・例リンク（例えば：蘇漫多警署釋  紫文  政談  源氏物語）などが表示されたデスクトップ幅でのオーバーレイ検索の例です。
 
-
-
 ## Features
 
 - **Dynamic Background Carousel:** Displays a full-width carousel of images sourced from one or more IIIF manifests.
