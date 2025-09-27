@@ -11,9 +11,9 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
 
 Overlay search and examples (desktop)
 
-    ![Overlay search (desktop)](asset/img/screenshot-overlay-desktop.png)
+![Overlay search (desktop)](asset/img/screenshot-overlay-desktop.png)
 
-    日本語UI・例リンク（例えば：蘇漫多警署釋  紫文  政談  源氏物語）などが表示されたデスクトップ幅でのオーバーレイ検索の例です。
+日本語UI・例リンク（例えば：蘇漫多警署釋  紫文  政談  源氏物語）などが表示されたデスクトップ幅でのオーバーレイ検索の例です。
 
 
 ## Features
