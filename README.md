@@ -7,6 +7,15 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
 - **Omeka S compatibility:** 4.x
 - **License:** GPL-3.0-or-later
 
+## Screenshots
+
+Overlay search and examples (desktop)
+
+    ![Overlay search (desktop)](asset/img/screenshot-overlay-desktop.png)
+
+    日本語UI・例リンク（例えば：蘇漫多警署釋  紫文  政談  源氏物語）などが表示されたデスクトップ幅でのオーバーレイ検索の例です。
+
+
 ## Features
 
 - **Dynamic Background Carousel:** Displays a full-width carousel of images sourced from one or more IIIF manifests.
@@ -179,22 +188,6 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 ### 全体設定（管理ダッシュボード）
 
 すべてのカルーセルのデフォルトの動作と画像プールを制御します。**モジュール**一覧の「IIIF Search Carousel」の**設定**ボタンからアクセスします。
-
-## Screenshots
-
-1. Overlay search and examples (desktop)
-
-    ![Overlay search (desktop)](asset/img/screenshot-overlay-desktop.png)
-
-    日本語UI・例リンク（例えば：蘇漫多警署釋  紫文  政談  源氏物語）などが表示されたデスクトップ幅でのオーバーレイ検索の例です。
-
-2. Block admin form (with preview table)
-
-    ![Block admin form](asset/img/screenshot-admin-block.png)
-
-3. Module settings (Modules page -> Settings button)
-
-    ![Module settings](asset/img/screenshot-module-settings.png)
 
 - **画像数:** 画像プールに取得・保持する画像の総数。
 - **カルーセル表示時間:** 各スライドが自動で切り替わるまでの表示時間（秒）。
