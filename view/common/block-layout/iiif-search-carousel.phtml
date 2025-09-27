@@ -9,9 +9,12 @@ $controllerMap = [
 $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
 $controller = $controllerMap[$initialTarget] ?? 'item';
 $searchAction = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
-$searchValue = $this->escapeHtml($this->params()->fromQuery('search', ''));
+$searchValue = $this->escapeHtml($this->params()->fromQuery('fulltext_search', ''));
 // Use module text domain for strings.
-$__placeholder = $this->plugin('translate')->__invoke('Search…', 'iiif-search-carousel');
+$__placeholder = 'Keywords';
+if (strpos((string) $this->lang(), 'ja') === 0) {
+  $__placeholder = 'キーワード';
+}
 $__buttonLabel = $this->plugin('translate')->__invoke('Search', 'iiif-search-carousel');
 
 // Ensure truncateLen is defined (0 disables truncation)
@@ -55,11 +58,11 @@ if ($__hasTrim) {
   <style>
     /* Scoped responsive aspect ratios for this block */
     #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioDefault); ?>; }
-<?php if (!empty($ratioMd) && !empty($bpMd)): ?>
-    @media (max-width: <?php echo (int) $bpMd; ?>px) {
-      #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioMd); ?>; }
-    }
-<?php endif; ?>
+  <?php if (!empty($ratioMd) && !empty($bpMd)): ?>
+      @media (max-width: <?php echo (int) $bpMd; ?>px) {
+        #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioMd); ?>; }
+      }
+  <?php endif; ?>
 <?php if (!empty($ratioSm) && !empty($bpSm)): ?>
     @media (max-width: <?php echo (int) $bpSm; ?>px) {
       #iiif-sc-<?php echo (int) $blockId; ?> .iiif-sc__bg { aspect-ratio: <?php echo $this->escapeHtml($ratioSm); ?>; }
@@ -67,10 +70,10 @@ if ($__hasTrim) {
 <?php endif; ?>
   </style>
   <?php if (!empty($customCss)): ?>
-    <style>
-      /* Custom CSS for #iiif-sc-<?php echo (int) $blockId; ?> */
-<?php echo $customCss; ?>
-    </style>
+      <style>
+        /* Custom CSS for #iiif-sc-<?php echo (int) $blockId; ?> */
+        <?php echo $customCss; ?>
+      </style>
   <?php endif; ?>
   <div class="iiif-sc__bg">
     <?php foreach ($rows as $i => $r): ?>
@@ -164,20 +167,22 @@ if ($__hasTrim) {
     <div class="iiif-sc__overlay">
           <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Carousel search form', 'iiif-search-carousel')); ?>">
             <div class="iiif-sc__controls">
-              <input type="search" id="multi-search-input" name="search" value="<?php echo $searchValue; ?>" placeholder="<?php echo $this->escapeHtml($__placeholder); ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Search keywords', 'iiif-search-carousel')); ?>" pattern=".*\S.*" required class="search-form__input">
-              <fieldset class="multi-search-logic">
-                <legend class="show-for-sr"><?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Logic', 'iiif-search-carousel')); ?></legend>
-                <label class="logic-option">
-                  <input type="radio" name="logic" value="and" checked> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('AND', 'iiif-search-carousel')); ?>
-                </label>
-                <?php $tooltipDisabledOr = $this->plugin('translate')->__invoke('OR is currently disabled (search uses AND).', 'iiif-search-carousel'); ?>
-                <label class="logic-option is-disabled" aria-disabled="true" title="<?php echo $this->escapeHtml($tooltipDisabledOr); ?>">
-                  <input type="radio" name="logic" value="or" disabled aria-disabled="true"> <?php echo $this->escapeHtml($this->plugin('translate')->__invoke('OR', 'iiif-search-carousel')); ?>
-                </label>
-              </fieldset>
+              <input type="search" id="multi-search-input" name="fulltext_search" value="<?php echo $searchValue; ?>" placeholder="<?php echo $this->escapeHtml($__placeholder); ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Search keywords', 'iiif-search-carousel')); ?>" pattern=".*\S.*" required class="search-form__input">
+              <input type="hidden" name="logic" value="and">
               <button type="submit" class="button"><?php echo $this->escapeHtml($__buttonLabel); ?></button>
             </div>
-        <?php if (!empty($exampleTerms) && is_array($exampleTerms)): ?>
+            <?php
+              // Advanced search link (right-aligned), carry current fulltext_search
+              $advUrl = $this->url('site/resource', ['controller' => 'item', 'action' => 'search'], true);
+              $advHref = $advUrl . '?fulltext_search=' . rawurlencode((string) $this->params()->fromQuery('fulltext_search', ''));
+              $__advLabel = $this->plugin('translate')->__invoke('Advanced search', 'iiif-search-carousel');
+              // If locale is Japanese, prefer a natural label
+              if (strpos((string) $this->lang(), 'ja') === 0) { $__advLabel = '詳細検索'; }
+            ?>
+            <div class="iiif-sc__tools-row">
+              <a class="iiif-sc__advanced-link" href="<?php echo $this->escapeHtml($advHref); ?>"><?php echo $this->escapeHtml($__advLabel); ?></a>
+            </div>
+          <?php /* Always attempt to build example keywords; if $exampleTerms is empty, fall back to slide labels. */ ?>
           <?php
             $labelExample = $this->plugin('translate')->__invoke('For example:', 'iiif-search-carousel');
             $controllerMap = [
@@ -188,158 +193,306 @@ if ($__hasTrim) {
             $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTargets[0] : 'items';
             $controller = $controllerMap[$initialTarget] ?? 'item';
             $baseUrl = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
+            // Build source list: prefer provided $exampleTerms; if empty, use slide labels.
+            $exampleSource = [];
+            if (isset($exampleTerms) && is_array($exampleTerms) && $exampleTerms) {
+              $exampleSource = $exampleTerms;
+            } else {
+              // Fallback: collect non-empty labels from current slides.
+              if (isset($rows) && is_array($rows)) {
+                foreach ($rows as $rr) {
+                  if (!empty($rr['label'])) {
+                    $exampleSource[] = (string) $rr['label'];
+                  }
+                  if (count($exampleSource) >= 12) break;
+                }
+              }
+            }
             // Formatter for example terms:
-            // - remove half-width brackets from display only
-            // - split by half-width or full-width spaces into tokens
-            // - pick the first non-stopword token (multilingual)
-            //   if all tokens are stopwords, fall back to the first token
-            // - CJK (ja/zh) の場合のみ 8 文字に丸める（単語分割しない言語向け）
-            //   欧米系など分かち書き言語は単語途中で切らず（=トークンそのまま）、最初のスペースまでを候補とする
-            // - remove comma characters from the displayed token
-            $formatExample = function ($s) {
+            // - remove half/full width brackets around
+            // - split by half-/full-width spaces, skip stopwords and numeric-only tokens
+            // - for CJK, prefer Mroonga tokens and clamp to 8 graphemes
+            $cjkMaxLen = isset($cjkMaxLen) ? (int) $cjkMaxLen : 8;
+            if ($cjkMaxLen < 2) { $cjkMaxLen = 2; }
+            if ($cjkMaxLen > 32) { $cjkMaxLen = 32; }
+            $headBiasDecay = isset($headBiasDecay) ? (float) $headBiasDecay : 0.82;
+            if ($headBiasDecay < 0.5) { $headBiasDecay = 0.5; }
+            if ($headBiasDecay > 0.99) { $headBiasDecay = 0.99; }
+            $formatExample = function ($s) use ($cjkMaxLen, $headBiasDecay) {
               $s = (string) $s;
-              // 軽微な括弧の除去（表示のみ）
+              // Remove simple brackets from display
               $s = preg_replace('/[\[\]\(\)\<\>]/u', '', $s);
-              // 文字化け防止のため、全体の前後にある記号・句読点を安全に除去
+              // Trim punctuation/symbols at both ends (incl. full-width space)
               $s = preg_replace('/^[\p{P}\p{S}\s\x{3000}]+|[\p{P}\p{S}\s\x{3000}]+$/u', '', $s);
-              // Tokenize by space (half- or full-width). Keep all tokens for stopword skipping.
               $tokens = preg_split('/[\s\x{3000}]+/u', $s, -1, PREG_SPLIT_NO_EMPTY);
-              // Load multilingual stopwords from JSON once (cache in static)
+
+              // Helpers in local scope (no global function pollution)
+              $isNumeric = static function (string $str): bool {
+                if ($str === '') return false;
+                if (preg_match('/^[0-9]+$/u', $str)) return true;
+                if (preg_match('/^[\x{FF10}-\x{FF19}]+$/u', $str)) return true;
+                return false;
+              };
+              $gLen = static function (string $str): int {
+                if ($str === '') return 0;
+                if (preg_match_all('/\X/u', $str, $m)) return count($m[0]);
+                return mb_strlen($str, 'UTF-8');
+              };
+              $gSub = static function (string $str, int $n) use ($gLen): string {
+                if ($n <= 0 || $str === '') return '';
+                if (preg_match_all('/\X/u', $str, $m)) return implode('', array_slice($m[0], 0, $n));
+                return mb_substr($str, 0, $n, 'UTF-8');
+              };
+
+              // Stopwords cache
               static $STOP = null;
               if ($STOP === null) {
-                $jsonPath = __DIR__ . '/../../../config/stopwords.json';
                 $STOP = [];
+                $jsonPath = __DIR__ . '/../../../config/stopwords.json';
                 if (is_readable($jsonPath)) {
                   $raw = @file_get_contents($jsonPath);
-                  if (is_string($raw) && $raw !== '') {
-                    $dec = json_decode($raw, true);
-                    if (is_array($dec)) { $STOP = $dec; }
-                  }
+                  $dec = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+                  if (is_array($dec)) $STOP = $dec;
                 }
               }
-              // Heuristics: derive candidate languages by script presence
-              $cands = [];
+
+              // Weighted pick helper: cands = [ [ 'weight' => float, 'value' => string ], ... ]
+              $weightedPick = static function (array $cands): string {
+                $sum = 0.0;
+                foreach ($cands as $c) { $w = (float) ($c['weight'] ?? 0.0); if ($w > 0) $sum += $w; }
+                if ($sum <= 0.0) return '';
+                // Use random_int for unbiased selection across requests
+                $scale = 1000000; // avoid float precision
+                $r = random_int(0, (int) max(1, (int) round($sum * $scale) - 1));
+                $acc = 0.0;
+                foreach ($cands as $c) {
+                  $w = (float) ($c['weight'] ?? 0.0);
+                  if ($w <= 0) continue;
+                  $acc += $w;
+                  if (($acc * $scale) > $r) return (string) ($c['value'] ?? '');
+                }
+                return (string) ($cands[count($cands) - 1]['value'] ?? '');
+              };
+
+              // Language candidates by script
               $strAll = implode(' ', $tokens);
-              if (preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $strAll)) { $cands[] = 'ja'; }
-              if (preg_match('/[A-Za-z]/', $strAll)) { array_push($cands, 'en', 'de', 'fr', 'es', 'it', 'la'); }
-              if (preg_match('/[\x{0370}-\x{03FF}]/u', $strAll)) { $cands[] = 'el'; }
-              if (!$cands) { $cands = ['en']; }
-              // Merge stopwords for candidates (normalize to lowercase where applicable)
+              $cands = [];
+              if (preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $strAll)) $cands[] = 'ja';
+              if (preg_match('/[A-Za-z]/', $strAll)) array_push($cands, 'en', 'de', 'fr', 'es', 'it', 'la');
+              if (preg_match('/[\x{0370}-\x{03FF}]/u', $strAll)) $cands[] = 'el';
+              if (!$cands) $cands = ['en'];
               $stop = [];
-              foreach ($cands as $lang) {
-                if (!empty($STOP[$lang]) && is_array($STOP[$lang])) {
-                  foreach ($STOP[$lang] as $w) { $stop[$w] = true; }
-                }
-              }
+              foreach ($cands as $lang) if (!empty($STOP[$lang])) foreach ((array) $STOP[$lang] as $w) $stop[$w] = true;
+
+              // Space-delimited languages: build candidates and pick with head-biased weight
               $chosen = '';
-              if (!empty($tokens)) {
-                foreach ($tokens as $t) {
-                  // Trim surrounding punctuation for accurate stopword matching
-                  $tStripped = trim($t, ".,;:!?\"'()[]{}<>");
-                  // mbstring 前提で小文字化
-                  $tLower = mb_strtolower($tStripped, 'UTF-8');
-                  // English-family languages are case-insensitive; Japanese/Greek entries are literal
-                  $key1 = $tLower;
-                  $key2 = $tStripped; // for scripts without case
-                  if ($tLower === '' || isset($stop[$key1]) || isset($stop[$key2])) {
-                    continue;
-                  }
-                  $chosen = $tStripped;
-                  break;
-                }
-                if ($chosen === '') {
-                  // All tokens were stopwords: use the first raw token
-                  $chosen = $tokens[0];
-                }
+              $candNonCjk = [];
+              $DECAY = $headBiasDecay; // earlier tokens get stronger weight
+              // When DECAY is small (e.g., 0.5), make the head-bias even sharper.
+              $biasExp = ($DECAY <= 0.6) ? 1.8 : 1.0;
+              // Additionally, trim the tail portion of candidates when bias is strong.
+              $tailTrimRatio = ($DECAY <= 0.6) ? 0.6 : 1.0; // keep only first 60% when strong bias
+              $total = count($tokens);
+              $maxIdx = $total > 0 ? (int) floor(($total * $tailTrimRatio) - 1) : -1;
+              foreach ($tokens as $idx => $t) {
+                if ($tailTrimRatio < 1.0 && $idx > $maxIdx) { continue; }
+                $tStripped = trim($t, ".,;:!?\"'()[]{}<>");
+                if ($tStripped === '') continue;
+                if ($isNumeric($tStripped)) continue;
+                $tLower = mb_strtolower($tStripped, 'UTF-8');
+                if (isset($stop[$tLower]) || isset($stop[$tStripped])) continue;
+                $posWeight = pow(pow($DECAY, (float) $idx), $biasExp);
+                $candNonCjk[] = [ 'value' => $tStripped, 'weight' => $posWeight ];
               }
-              // If no tokens (e.g., only brackets removed), fall back to the original string
-              if ($chosen === '') {
-                $chosen = $s;
+              if ($candNonCjk) {
+                $picked = $weightedPick($candNonCjk);
+                if ($picked !== '') $chosen = $picked;
               }
-              // Apply 8-char truncation ONLY for CJK (Japanese/Chinese) content; for space-delimited languages, keep the full token uncut
+              if ($chosen === '') $chosen = $s;
+
+              // CJK handling: prefer Mroonga tokens and clamp to configured graphemes, with head-biased weighted pick
               $hasCjk = (bool) preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $strAll);
               if ($hasCjk) {
-                // グラフェムクラスタ単位の長さ/切り出し（intl不要、PCREの\Xを使用）
-                if (!function_exists('iiif_sc_grapheme_len')) {
-                  function iiif_sc_grapheme_len(string $str): int {
-                    if ($str === '') return 0;
-                    if (preg_match_all('/\X/u', $str, $m)) { return count($m[0]); }
-                    return mb_strlen($str, 'UTF-8');
-                  }
-                }
-                if (!function_exists('iiif_sc_grapheme_sub')) {
-                  function iiif_sc_grapheme_sub(string $str, int $n): string {
-                    if ($n <= 0 || $str === '') return '';
-                    if (preg_match_all('/\X/u', $str, $m)) { return implode('', array_slice($m[0], 0, $n)); }
-                    return mb_substr($str, 0, $n, 'UTF-8');
-                  }
-                }
-
-                // 形態素風に分割して8文字以内で連結（mbstring前提）
-                $jaStop = isset($STOP['ja']) && is_array($STOP['ja']) ? array_fill_keys($STOP['ja'], true) : [];
-                $segmentJa = function (string $text) use ($jaStop): array {
-                  $units = [];
-                  // 連続する 漢字 / ひらがな / カタカナ(長音記号含む) / 英数 / その他1文字 をトークン化
-                  if (preg_match_all('/(?:[\x{4E00}-\x{9FFF}]+|[\x{3040}-\x{309F}]+|[\x{30A0}-\x{30FF}ー]+|[A-Za-z0-9]+|[^\s])/u', $text, $m)) {
-                    foreach ($m[0] as $tok) {
-                      // 前後の記号・句読点をUnicode特性で除去（マルチバイト安全）
-                      $tok = preg_replace('/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/u', '', $tok);
-                      if ($tok === '') { continue; }
-                      // ストップワード（助詞等）はユニットから除外
-                      if (isset($jaStop[$tok])) { continue; }
-                      $units[] = $tok;
+                $pickedByMroonga = '';
+                try {
+                  $textSrc = ($strAll !== '') ? $strAll : $s;
+                  $tokensFromM = $this->mroongaTokenize($textSrc);
+                  if ($tokensFromM) {
+                    $jaStop = isset($STOP['ja']) && is_array($STOP['ja']) ? array_fill_keys($STOP['ja'], true) : [];
+                    // 名詞類（と推定できるもの）優先スコア + 位置減衰重みで抽選
+                    $cands = [];
+                    $best = '';
+                    $bestScore = -INF;
+                    $tCount = count($tokensFromM);
+                    $maxIdx = $tCount > 0 ? (int) floor(($tCount * $tailTrimRatio) - 1) : -1;
+                    foreach ($tokensFromM as $idx => $u) {
+                      if ($tailTrimRatio < 1.0 && $idx > $maxIdx) { continue; }
+                      $u = preg_replace('/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/u', '', (string) $u);
+                      if ($u === '') continue;
+                      if ($isNumeric($u)) continue;
+                      if (isset($jaStop[$u])) continue;
+                      if ($gLen($u) < 2) continue;
+                      $score = 0;
+                      if (preg_match('/[\x{4E00}-\x{9FFF}]/u', $u)) $score += 2;
+                      if (preg_match('/[\x{30A0}-\x{30FF}ー]/u', $u)) $score += 1;
+                      if (preg_match('/^[\x{3040}-\x{309F}]+$/u', $u)) $score -= 1;
+                      $len = $gLen($u);
+                      if ($len >= 2 && $len <= 3) $score += 2; elseif ($len === 4) $score += 1; elseif ($len >= 5) $score -= 1;
+                      if ($score > $bestScore) { $bestScore = $score; $best = $u; }
+                      // convert to positive weight and add head bias
+                      $base = max(0.2, $score + 2.0); // shift to keep > 0
+                      $posWeight = pow(pow($DECAY, (float) $idx), $biasExp);
+                      $cands[] = [ 'value' => $u, 'weight' => $base * $posWeight ];
                     }
+                    // Try weighted pick; fallback to best
+                    $picked = $weightedPick($cands);
+                    if ($picked === '' && $best !== '') $picked = $best;
+                    if ($picked !== '') $pickedByMroonga = $gSub($picked, $cjkMaxLen);
                   }
-                  return $units;
-                };
-                $units = $segmentJa($chosen);
-                if ($units) {
-                  $acc = '';
-                  foreach ($units as $u) {
-                    $next = $acc . $u;
-                    if (iiif_sc_grapheme_len($next) <= 8) {
-                      $acc = $next;
-                    } else {
-                      break;
-                    }
-                  }
-                  if ($acc !== '') {
-                    $chosen = $acc;
-                  } else {
-                    // 最初のユニットすら入らない場合は先頭8クラスタにフォールバック
-                    $chosen = iiif_sc_grapheme_sub($chosen, 8);
-                  }
+                } catch (\Throwable $e) {}
+                if ($pickedByMroonga !== '') {
+                  $chosen = $pickedByMroonga;
                 } else {
-                  // 分割できなければ先頭8クラスタ
-                  $chosen = iiif_sc_grapheme_sub($chosen, 8);
+                  $jaStop = isset($STOP['ja']) && is_array($STOP['ja']) ? array_fill_keys($STOP['ja'], true) : [];
+                  $textSrc = ($strAll !== '') ? $strAll : $s;
+                  $unitsAll = [];
+                  if (preg_match_all('/(?:[\x{4E00}-\x{9FFF}]+|[\x{3040}-\x{309F}]+|[\x{30A0}-\x{30FF}ー]+|[A-Za-z0-9]+|[^\s])/u', $textSrc, $mAll)) {
+                    foreach ($mAll[0] as $tok) {
+                      $tok = preg_replace('/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/u', '', $tok);
+                      if ($tok !== '') $unitsAll[] = $tok;
+                    }
+                  }
+                  // ユニット候補から1語を、名詞スコア+位置減衰重みで抽選
+                  $cands = [];
+                  $best = '';
+                  $bestScore = -INF;
+                  $uCount = count($unitsAll);
+                  $maxIdx = $uCount > 0 ? (int) floor(($uCount * $tailTrimRatio) - 1) : -1;
+                  foreach ($unitsAll as $idx => $u) {
+                    if ($tailTrimRatio < 1.0 && $idx > $maxIdx) { continue; }
+                    if (isset($jaStop[$u])) continue;
+                    if ($isNumeric($u)) continue;
+                    if ($gLen($u) < 2) continue;
+                    $score = 0;
+                    if (preg_match('/[\x{4E00}-\x{9FFF}]/u', $u)) $score += 2;
+                    if (preg_match('/[\x{30A0}-\x{30FF}ー]/u', $u)) $score += 1;
+                    if (preg_match('/^[\x{3040}-\x{309F}]+$/u', $u)) $score -= 1;
+                    $len = $gLen($u);
+                    if ($len >= 2 && $len <= 3) $score += 2; elseif ($len === 4) $score += 1; elseif ($len >= 5) $score -= 1;
+                    if ($score > $bestScore) { $bestScore = $score; $best = $u; }
+                    $base = max(0.2, $score + 2.0);
+                    $posWeight = pow(pow($DECAY, (float) $idx), $biasExp);
+                    $cands[] = [ 'value' => $u, 'weight' => $base * $posWeight ];
+                  }
+                  $picked = $weightedPick($cands);
+                  if ($picked === '' && $best !== '') { $picked = $best; }
+                  if ($picked !== '') {
+                    $chosen = $gSub($picked, $cjkMaxLen);
+                  } else {
+                    $beforeStop = '';
+                    foreach ($unitsAll as $u) { if (isset($jaStop[$u])) break; $beforeStop .= $u; }
+                    if ($beforeStop !== '') {
+                      // 1語要件のため、先頭ユニットを切り出す
+                      if (preg_match('/(?:[\x{4E00}-\x{9FFF}]+|[\x{3040}-\x{309F}]+|[\x{30A0}-\x{30FF}ー]+|[A-Za-z0-9]+)/u', $beforeStop, $m1)) {
+                        $chosen = $gSub($m1[0], $cjkMaxLen);
+                      } else {
+                        $chosen = $gSub($beforeStop, $cjkMaxLen);
+                      }
+                    } else {
+                      $units = [];
+                      if (preg_match_all('/(?:[\x{4E00}-\x{9FFF}]+|[\x{3040}-\x{309F}]+|[\x{30A0}-\x{30FF}ー]+|[A-Za-z0-9]+|[^\s])/u', $textSrc, $mNoStop)) {
+                        foreach ($mNoStop[0] as $tok) {
+                          $tok = preg_replace('/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/u', '', $tok);
+                          if ($tok === '' || isset($jaStop[$tok])) continue;
+                          $units[] = $tok;
+                        }
+                      }
+                      if ($units) {
+                        // 1語を重み付き抽選（名詞スコア+位置減衰）
+                        $cands2 = [];
+                        $best = '';
+                        $bestScore = -INF;
+                        $uuCount = count($units);
+                        $maxIdx = $uuCount > 0 ? (int) floor(($uuCount * $tailTrimRatio) - 1) : -1;
+                        foreach ($units as $idx => $u) {
+                          if ($tailTrimRatio < 1.0 && $idx > $maxIdx) { continue; }
+                          $score = 0;
+                          if (preg_match('/[\x{4E00}-\x{9FFF}]/u', $u)) $score += 2;
+                          if (preg_match('/[\x{30A0}-\x{30FF}ー]/u', $u)) $score += 1;
+                          if (preg_match('/^[\x{3040}-\x{309F}]+$/u', $u)) $score -= 1;
+                          $len = $gLen($u);
+                          if ($len >= 2 && $len <= 3) $score += 2; elseif ($len === 4) $score += 1; elseif ($len >= 5) $score -= 1;
+                          if ($score > $bestScore) { $bestScore = $score; $best = $u; }
+                          $base = max(0.2, $score + 2.0);
+                          $posWeight = pow(pow($DECAY, (float) $idx), $biasExp);
+                          $cands2[] = [ 'value' => $u, 'weight' => $base * $posWeight ];
+                        }
+                        $picked = $weightedPick($cands2);
+                        if ($picked === '' && $best !== '') $picked = $best;
+                        $chosen = $gSub($picked, $cjkMaxLen);
+                      } else {
+                        $chosen = $gSub($textSrc, 8);
+                      }
+                    }
+                  }
                 }
               }
-              // Remove comma characters from display
+              if ($isNumeric($chosen)) $chosen = '';
               $chosen = str_replace([',', '，'], '', $chosen);
               return $chosen;
             };
+              // Precompute example displays with filtering; fallback if all filtered out.
+              $examplesOut = [];
+              if (is_array($exampleSource) && $exampleSource) {
+                foreach ($exampleSource as $t) {
+                  $display = $formatExample((string) $t);
+                  if ($display === '') { continue; }
+                  // Deduplicate while preserving order
+                  if (!isset($examplesOut[$display])) {
+                    $examplesOut[$display] = true;
+                    if (count($examplesOut) >= 6) { break; }
+                  }
+                }
+              }
+              if (!$examplesOut) {
+                // Fallback: use raw terms trimmed (multibyte-safe), allowing numbers so "例えば"が必ず出る
+                $limit = 12;
+                $trimRaw = function (string $s) use ($limit): string {
+                  if ($s === '') return '';
+                  if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+                    return (mb_strlen($s, 'UTF-8') > $limit) ? (mb_substr($s, 0, $limit, 'UTF-8')) : $s;
+                  }
+                  return (strlen($s) > $limit) ? substr($s, 0, $limit) : $s;
+                };
+                foreach ($exampleSource as $t) {
+                  $raw = trim((string) $t);
+                  if ($raw === '') continue;
+                  $disp = $trimRaw($raw);
+                  if ($disp === '') continue;
+                  if (!isset($examplesOut[$disp])) {
+                    $examplesOut[$disp] = true;
+                    if (count($examplesOut) >= 5) { break; }
+                  }
+                }
+              }
           ?>
+            <?php if (!empty($examplesOut)): ?>
           <div class="iiif-sc__examples-row">
             <div class="iiif-sc__examples" aria-label="<?php echo $this->escapeHtml($labelExample); ?>">
               <span class="iiif-sc__examples-label"><?php echo $this->escapeHtml($labelExample); ?></span>
-              <?php foreach ($exampleTerms as $i => $term): ?>
+              <?php foreach (array_keys($examplesOut) as $i => $display): ?>
                 <?php
-                  $q = (string) $term;
-                  $display = $formatExample($q);
-                  // 実際の検索クエリも表示ラベルと同一にする（空なら元の語にフォールバック）
-                  $query = ($display !== '') ? $display : $q;
-                  $href = $baseUrl . '?search=' . rawurlencode($query);
+                  $query = $display;
+                  $href = $baseUrl . '?fulltext_search=' . rawurlencode($query) . '&logic=and';
                 ?>
                 <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($display); ?>"><?php echo $this->escapeHtml($display); ?></a>
-
               <?php endforeach; ?>
             </div>
           </div>
-        <?php endif; ?>
-        <div id="multi-search-hidden" aria-hidden="true" style="display:none"></div>
-      </form>
+              <?php endif; ?>
+          <div id="multi-search-hidden" aria-hidden="true" style="display:none"></div>
+        </form>
     </div>
   <?php endif; ?>
-
   <script>window.IIIF_SC_DURATION=<?php echo (int) $duration; ?>;</script>
-</section>
+  </section>

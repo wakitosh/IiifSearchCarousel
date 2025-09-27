@@ -190,6 +190,9 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       'trimLeft' => $trimLeft,
       'showSearch' => (bool) $block->dataValue('show_search', TRUE),
       'exampleTerms' => $exampleTerms,
+      // New configurable parameters with safe defaults.
+      'cjkMaxLen' => (int) ($block->dataValue('cjk_max_len', 8)),
+      'headBiasDecay' => (float) ($block->dataValue('head_bias_decay', 0.82)),
     ]);
   }
 
@@ -284,6 +287,32 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       $left->setValue((string) ($block->dataValue('trim_left', 0)));
     }
     $form->add($left);
+
+    // CJK maximum display length (graphemes)
+    $cjkMax = new Number('o:block[__blockIndex__][o:data][cjk_max_len]');
+    $cjkMax->setLabel($view->translate('CJKの最大表示長（グラフェム）', 'iiif-search-carousel'));
+    $cjkMax->setAttributes(['min' => 2, 'max' => 32, 'step' => '1']);
+    if ($block) {
+      $cjkMax->setValue((string) ($block->dataValue('cjk_max_len', 8)));
+    }
+    else {
+      $cjkMax->setValue('8');
+    }
+    $cjkMax->setOption('info', $view->translate('例示キーワードを結合文字や絵文字に配慮して安全に切り詰めます。許容範囲: 2〜32。既定値: 8。', 'iiif-search-carousel'));
+    $form->add($cjkMax);
+
+    // Head-biased selection decay (0.5–0.99).
+    $decay = new Number('o:block[__blockIndex__][o:data][head_bias_decay]');
+    $decay->setLabel($view->translate('先頭寄り重み付けの減衰率', 'iiif-search-carousel'));
+    $decay->setAttributes(['min' => 0.5, 'max' => 0.99, 'step' => '0.01']);
+    if ($block) {
+      $decay->setValue((string) ($block->dataValue('head_bias_decay', 0.82)));
+    }
+    else {
+      $decay->setValue('0.82');
+    }
+    $decay->setOption('info', $view->translate('文頭に近い語ほど選ばれやすくするための減衰率です。値が小さいほど先頭に強く偏ります。許容範囲: 0.50〜0.99。既定値: 0.82。', 'iiif-search-carousel'));
+    $form->add($decay);
 
     // Append current selection preview (read-only list from iiif_sc_images).
     // Show up to 50 entries for performance.
@@ -456,6 +485,41 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     else {
       $data['show_search'] = (bool) $data['show_search'];
     }
+
+    // Normalize CJK maximum display length (int, 2..32).
+    if (isset($data['cjk_max_len'])) {
+      $v = (int) $data['cjk_max_len'];
+      if ($v < 2) {
+        $v = 2;
+      }
+      if ($v > 32) {
+        $v = 32;
+      }
+      $data['cjk_max_len'] = $v;
+    }
+    else {
+      $data['cjk_max_len'] = 8;
+    }
+
+    // Normalize head-biased decay (float, 0.5..0.99).
+    if (isset($data['head_bias_decay'])) {
+      $f = (float) $data['head_bias_decay'];
+      if (!is_numeric((string) $data['head_bias_decay'])) {
+        $f = 0.82;
+      }
+      if ($f < 0.5) {
+        $f = 0.5;
+      }
+      if ($f > 0.99) {
+        $f = 0.99;
+      }
+      // Round to 2 decimals to avoid noisy diffs.
+      $data['head_bias_decay'] = (float) number_format($f, 2, '.', '');
+    }
+    else {
+      $data['head_bias_decay'] = 0.82;
+    }
+
     $block->setData($data);
   }
 

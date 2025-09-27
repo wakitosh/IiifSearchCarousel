@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.26 - 2025-09-27
+EN:
+- Example keywords: Add per-block settings for CJK maximum display length (graphemes, default 8, range 2–32) and head-biased selection decay (default 0.82, range 0.50–0.99). Strengthen head-bias when decay ≤ 0.6 by exponentiating positional weight and trimming tail candidates.
+- Visibility: Example link counts adjusted to Desktop 5, Tablet 4, Mobile 3.
+- Robustness: Works with and without Mroonga/TokenMecab; falls back to regex-based segmentation seamlessly. AND-only search and CleanUrl-aware links unchanged.
+
+JA:
+- 例示キーワード: ブロック設定に「CJKの最大表示長（グラフェム、既定値8、2〜32）」と「先頭寄り重み付けの減衰率（既定値0.82、0.50〜0.99）」を追加。減衰率が0.6以下のときは、位置重みの指数強化と末尾候補の一部除外で先頭寄りをさらに強化。
+- 表示件数: 例リンクの表示数をPC/タブレット/モバイルで 5/4/3 に調整。
+- 堅牢性: Mroonga/MeCab が無い環境でも正規表現分割に自動フォールバックして動作。AND専用検索とCleanUrl対応は従来通り。
+
 ## 0.2.25 - 2025-09-25
 EN:
 - Block admin preview: Resource page links are now CleanUrl-aware and use the site's public CleanUrl routes (for both items and media).

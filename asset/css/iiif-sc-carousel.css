@@ -58,7 +58,7 @@
     padding: 1rem;
     border-radius: .5rem;
     display: flex;
-    gap: .5rem;
+    gap: 0;
     width: 100%;
     /* Scale with viewport: narrower on small/medium, capped on large */
     max-width: clamp(320px, 60vw, 720px);
@@ -155,8 +155,9 @@
     }
 
     .iiif-sc__controls .search-form__input {
-        flex: 1 1 65%;
-        max-width: 65%;
+        /* Allow input to shrink to share space with the button */
+        flex: 1 1 0%;
+        max-width: none;
         min-width: 0;
     }
 
@@ -173,6 +174,8 @@
     .iiif-sc__controls .button {
         padding: .35rem .5rem;
         font-size: .95em;
+        margin-left: auto;
+        /* push button to the right edge */
     }
 }
 
@@ -183,8 +186,9 @@
     }
 
     .iiif-sc__controls .search-form__input {
-        flex: 1 1 64%;
-        max-width: 64%;
+        /* Allow input to shrink further on very narrow screens */
+        flex: 1 1 0%;
+        max-width: none;
     }
 
     .iiif-sc__controls .multi-search-logic {
@@ -198,6 +202,8 @@
     .iiif-sc__controls .button {
         padding: .3rem .45rem;
         font-size: .9em;
+        margin-left: auto;
+        /* ensure right alignment on very small screens */
     }
 }
 
@@ -261,8 +267,8 @@
 }
 
 /* Limit visible examples by viewport width */
-/* Desktop: show up to 5 */
-.iiif-sc__examples .iiif-sc__example:nth-child(n+6) {
+/* Desktop: show up to 5 examples (plus label) */
+.iiif-sc__examples .iiif-sc__example:nth-child(n+7) {
     display: none;
 }
 
@@ -273,7 +279,8 @@
         row-gap: .35rem;
     }
 
-    .iiif-sc__examples .iiif-sc__example:nth-child(n+5) {
+    /* Tablet: show up to 4 examples (plus label) */
+    .iiif-sc__examples .iiif-sc__example:nth-child(n+6) {
         display: none;
     }
 }
@@ -285,7 +292,8 @@
         row-gap: .25rem;
     }
 
-    .iiif-sc__examples .iiif-sc__example:nth-child(n+4) {
+    /* Mobile: show up to 3 examples (plus label) */
+    .iiif-sc__examples .iiif-sc__example:nth-child(n+5) {
         display: none;
     }
 }
@@ -301,12 +309,45 @@
 /* Ensure examples appear on their own row below the controls */
 .iiif-sc__examples-row {
     flex: 1 1 100%;
-    margin-top: .35rem;
+    margin-top: 0;
 }
 
 .iiif-sc__search.search-form.search-form--inline label {
     line-height: 1;
     /* standard line-height to align with inputs/buttons */
+}
+
+/* Tools row between controls and examples */
+.iiif-sc__tools-row {
+    width: 100%;
+    /* Use Grid so the single child can be reliably right-aligned across browsers */
+    display: grid;
+    justify-items: end;
+    /* Fallback alignment in case Grid is overridden */
+    text-align: right;
+    /* Ensure parent layouts allow this to expand full width */
+    min-width: 0;
+    margin-top: .5rem;
+    /* add visual gap between row1 and row2 */
+}
+
+.iiif-sc__advanced-link {
+    /* Slightly smaller font size per request */
+    font-size: .85em;
+    color: #0366d6;
+    text-decoration: none;
+}
+
+.iiif-sc__advanced-link:hover,
+.iiif-sc__advanced-link:focus {
+    text-decoration: underline;
+}
+
+/* Extra small font for the advanced link on narrow screens */
+@media (max-width: 600px) {
+    .iiif-sc__advanced-link {
+        font-size: .8em;
+    }
 }
 
 /* Slight downward nudge so radios/labels align visually with input/button */
@@ -322,10 +363,10 @@
 
     .iiif-sc__search {
         flex-direction: row;
-        gap: .4rem;
+        gap: 0;
         padding: .5rem;
-        /* Keep some margin to the edges while allowing wide input (narrower) */
-        max-width: clamp(220px, 88vw, 520px);
+        /* Allow wider form on small screens to prevent button overflow */
+        max-width: clamp(220px, 96vw, 560px);
         font-size: .9rem;
     }
 
@@ -343,5 +384,32 @@
         max-width: calc(100% - 2rem);
         overflow-wrap: anywhere;
         word-break: break-word;
+    }
+
+    /* Ensure flex container can shrink children properly */
+    .iiif-sc__controls {
+        min-width: 0;
+    }
+}
+
+/* Small screens: keep input and button on one row via Grid (input grows, button auto) */
+@media (max-width: 640px) {
+    .iiif-sc__controls {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: .3rem;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .iiif-sc__controls .search-form__input {
+        min-width: 0;
+        max-width: none !important;
+        width: auto;
+    }
+
+    .iiif-sc__controls .button {
+        justify-self: end;
+        margin-left: 0;
     }
 }

@@ -12,6 +12,7 @@ use Psr\Container\ContainerInterface;
 use IiifSearchCarousel\Controller\Admin\ConfigController;
 use IiifSearchCarousel\Site\BlockLayout\SearchCarouselBlock;
 use IiifSearchCarousel\Form\SettingsForm;
+use IiifSearchCarousel\View\Helper\MroongaTokenize;
 
 return [
   // Enable module translations via php array files under language/*.php.
@@ -92,6 +93,20 @@ return [
   'view_manager' => [
     'template_path_stack' => [
       __DIR__ . '/../view',
+    ],
+  ],
+
+  // Expose a view helper for Mroonga-based tokenization.
+  'view_helpers' => [
+    'factories' => [
+      MroongaTokenize::class => function (ContainerInterface $c) {
+        $connection = $c->get('Omeka\\Connection');
+        return new MroongaTokenize($connection);
+      },
+    ],
+    'aliases' => [
+      // Use as $this->mroongaTokenize('...') in PHTML.
+      'mroongaTokenize' => MroongaTokenize::class,
     ],
   ],
 ];

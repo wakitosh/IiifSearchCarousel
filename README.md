@@ -14,7 +14,7 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
     - **Multi-Target Search:** Configure searches across Items, Media, and/or Item Sets.
     - **Show/Hide Option:** The search box can be hidden for a display-only carousel.
     - **AND-only Logic:** The search operates with AND-only semantics. The OR control is displayed for clarity but disabled.
-    - **Example Query Links:** Example links are generated from site search terms. The displayed label equals the submitted query, the tooltip matches the label, multilingual stopwords are skipped, and for CJK text only the first 8 graphemes are shown (no mojibake).
+    - **Example Query Links:** Example links are generated from site search terms. The displayed label equals the submitted query and the tooltip matches the label. Multilingual stopwords and numeric-only tokens are skipped. For CJK text, labels are grapheme-safely truncated with a configurable limit (default 8). One-word examples are selected via a noun-preferred score and a head-biased weighted random (configurable decay; default 0.82). When the decay is small (≤ 0.6), the head-bias is further strengthened. Visible examples by viewport: Desktop 5, Tablet 4, Mobile 3.
 - **Advanced Image Control:**
     - **Flexible Canvas Selection:** Use powerful rules to select which canvas to display from a manifest (e.g., "the 2nd canvas," "a random canvas from the 3rd to the last-but-one").
     - **IIIF Image Trimming:** Trim images by percentage from any side (top, right, bottom, left) using the `pct:x,y,w,h` region parameter of the IIIF Image API.
@@ -62,6 +62,9 @@ When you add a "IIIF Search Carousel" block to a site page, you can override or 
 - **Show search box:** Uncheck this to hide the search box and use the block as a purely decorative image carousel.
 - **Custom CSS (scoped):** Add CSS rules that will only apply to this block. A unique ID selector (e.g., `#iiif-sc-123`) is provided for easy scoping.
 - **Trim (top, right, bottom, left) (%):** Specify a percentage to trim from each side of the image. For example, setting "Trim top" to `10` will cut off the top 10% of the image. This uses the IIIF Image API's `pct:` region parameter.
+// Examples configuration
+- **CJK maximum display length (graphemes):** Grapheme-safe truncation length for example keywords. Default 8. Allowed range: 2–32.
+- **Head-biased selection decay:** Earlier tokens get higher weight. Default 0.82. Smaller values bias more strongly to the head. Allowed range: 0.50–0.99. Additional strengthening applies when ≤ 0.6.
 
 #### Admin-only: Current Selection List (Preview)
 
@@ -76,7 +79,7 @@ For internal links detected as `omeka:item:{id}` or `omeka:media:{id}`, the "Res
 
 ### Search Box Size
 
-The overlaid search form scales with viewport width. By default it uses a responsive max-width with `clamp()` so it stays proportionate to the carousel on small/medium screens. You can further tailor its width per block with the "Custom CSS (scoped)" field; target the selector `#iiif-sc-{id} .iiif-sc__search`.
+The overlaid search form scales with viewport width. By default it uses a responsive max-width with `clamp()` so it stays proportionate to the carousel on small/medium screens. You can further tailor its width per block with the "Custom CSS (scoped)" field; target `#iiif-sc-{id} .iiif-sc__search`. The example links below the input show up to 5/4/3 items on Desktop/Tablet/Mobile.
 
 ## Advanced Features
 
@@ -150,7 +153,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
     - **複数対象検索:** アイテム、メディア、アイテムセットを横断して検索するよう設定できます。
     - **表示/非表示オプション:** 検索ボックスを非表示にして、ディスプレイ専用のカルーセルとしても利用可能です。
     - **AND専用ロジック:** 検索は AND のみで動作します。OR コントロールは視覚的には表示しますが無効化されています。
-    - **例リンク:** サイトの検索語から例リンクを生成します。表示テキスト＝送信クエリで、ツールチップも表示と同一。多言語のストップワードを避け、CJK テキストの場合のみ先頭8グラフェムまでを表示し、文字化けを防ぎます。
+    - **例リンク:** サイトの検索語から例リンクを生成します。表示テキスト＝送信クエリで、ツールチップも表示と同一。多言語ストップワードや数字のみの語は除外します。CJKテキストはグラフェム安全に省略し、最大長は設定可能（既定値8）。名詞寄りスコア＋先頭寄り重み付け（減衰率は設定可能、既定値0.82）で1語を選び、減衰率が小さい（≤0.6）場合は先頭寄りがさらに強化されます。表示件数はPC/タブレット/モバイルで5/4/3。
 - **高度な画像コントロール:**
     - **柔軟なキャンバス選択:** 「2枚目のキャンバス」「3枚目から最後から2枚目までのうちランダムな1枚」など、マニフェストからどのキャンバスを表示するかを強力なルールで指定できます。
     - **IIIF画像トリミング:** IIIF Image APIの`pct:x,y,w,h`領域パラメータを利用して、画像の上下左右をパーセンテージでトリミングできます。
@@ -198,6 +201,9 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **検索ボックスを表示:** チェックを外すと検索ボックスが非表示になり、純粋な装飾用画像カルーセルとして使用できます。
 - **カスタムCSS（スコープ済み）:** このブロックにのみ適用されるCSSルールを追加します。スコープを容易にするため、ユニークなIDセレクタ（例: `#iiif-sc-123`）が提供されます。
 - **トリミング（上下左右）（%）:** 画像の各辺からトリミングするパーセンテージを指定します。例えば、「上をトリミング」に`10`と設定すると、画像の上部10%がカットされます。これはIIIF Image APIの`pct:`領域指定を利用します。
+// 例示の設定
+- **CJKの最大表示長（グラフェム）:** 例示キーワードの安全な省略長。既定値8。許容範囲: 2〜32。
+- **先頭寄り重み付けの減衰率:** 文頭に近い語ほど重みを高くする係数。既定値0.82。小さいほど先頭に強く偏ります。許容範囲: 0.50〜0.99。0.6以下では先頭寄りがより強化されます。
 
 #### 管理画面のみ: 現在の選択リスト（プレビュー）
 
@@ -212,7 +218,13 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 
 ### 検索ボックスのサイズ
 
-オーバーレイの検索フォームはビューポート幅に応じてスケールします。既定では `clamp()` を用いたレスポンシブな最大幅を設定しており、Small/Medium でもカルーセルに対して大きすぎないように調整されています。さらに細かく調整したい場合は、ブロックの「カスタムCSS（スコープ済み）」で `#iiif-sc-{id} .iiif-sc__search` をターゲットに上書きしてください。
+オーバーレイの検索フォームはビューポート幅に応じてスケールします。既定では `clamp()` を用いたレスポンシブな最大幅を設定しており、Small/Medium でもカルーセルに対して大きすぎないように調整されています。さらに細かく調整したい場合は、ブロックの「カスタムCSS（スコープ済み）」で `#iiif-sc-{id} .iiif-sc__search` をターゲットに上書きしてください。入力欄の下に表示される例リンクは、PC/タブレット/モバイルで 5/4/3 件表示されます。
+
+### Tokenization and Fallbacks / トークナイズとフォールバック
+
+- When available, example keywords prefer morphological tokens via Mroonga TokenMecab.
+- On environments without Mroonga/MeCab, the module falls back to regex-based segmentation (Kanji/Hiragana/Katakana/Latin-numeric) and applies the same noun/length scoring and head-biased weighting.
+- In all cases, links are CleanUrl-aware and use AND-only search.
 
 ## 高度な機能
 
