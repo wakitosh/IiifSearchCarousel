@@ -278,7 +278,10 @@
         column-gap: .5rem;
         row-gap: .35rem;
     }
+}
 
+/* Narrower tablet breakpoint for limiting to 4 examples */
+@media (max-width: 820px) {
     /* Tablet: show up to 4 examples (plus label) */
     .iiif-sc__examples .iiif-sc__example:nth-child(n+6) {
         display: none;
