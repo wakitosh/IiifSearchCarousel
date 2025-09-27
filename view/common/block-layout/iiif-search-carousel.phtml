@@ -475,6 +475,80 @@ if ($__hasTrim) {
                   }
                 }
               }
+
+              // Ensure we have at least 5 examples on desktop: if less than 5 so far,
+              // try to extract additional candidates from the same sources by tokenizing.
+              if (count($examplesOut) < 5 && !empty($exampleSource)) {
+                // Load stopwords (same file as used in formatExample)
+                $STOP_LOCAL = [];
+                $jsonPath = __DIR__ . '/../../../config/stopwords.json';
+                if (is_readable($jsonPath)) {
+                  $raw = @file_get_contents($jsonPath);
+                  $dec = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+                  if (is_array($dec)) $STOP_LOCAL = $dec;
+                }
+                $isNumeric2 = static function (string $str): bool {
+                  if ($str === '') return false;
+                  if (preg_match('/^[0-9]+$/u', $str)) return true;
+                  if (preg_match('/^[\x{FF10}-\x{FF19}]+$/u', $str)) return true;
+                  return false;
+                };
+                $gLen2 = static function (string $str): int {
+                  if ($str === '') return 0;
+                  if (preg_match_all('/\X/u', $str, $m)) return count($m[0]);
+                  return mb_strlen($str, 'UTF-8');
+                };
+                $gSub2 = static function (string $str, int $n) use ($gLen2): string {
+                  if ($n <= 0 || $str === '') return '';
+                  if (preg_match_all('/\X/u', $str, $m)) return implode('', array_slice($m[0], 0, $n));
+                  return mb_substr($str, 0, $n, 'UTF-8');
+                };
+                $added = 0;
+                foreach ($exampleSource as $t) {
+                  if (count($examplesOut) >= 5) break;
+                  $s = (string) $t;
+                  // Normalize: remove brackets and trim punctuation/space at ends
+                  $s = preg_replace('/[\[\]\(\)\<\>]/u', '', $s);
+                  $s = preg_replace('/^[\p{P}\p{S}\s\x{3000}]+|[\p{P}\p{S}\s\x{3000}]+$/u', '', $s);
+                  if ($s === '') continue;
+                  // Tokenize: Kanji/Hiragana/Katakana/Alnum units
+                  $units = [];
+                  if (preg_match_all('/(?:[\x{4E00}-\x{9FFF}]+|[\x{3040}-\x{309F}]+|[\x{30A0}-\x{30FF}\x{30FC}]+|[A-Za-z0-9]+|[^\s])/u', $s, $mAll)) {
+                    foreach ($mAll[0] as $u) {
+                      $u = preg_replace('/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/u', '', $u);
+                      if ($u !== '') $units[] = $u;
+                    }
+                  }
+                  if (!$units) continue;
+                  // Determine languages roughly by script to collect stopwords
+                  $langs = [];
+                  if (preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $s)) $langs[] = 'ja';
+                  if (preg_match('/[A-Za-z]/', $s)) array_push($langs, 'en', 'de', 'fr', 'es', 'it', 'la');
+                  if (preg_match('/[\x{0370}-\x{03FF}]/u', $s)) $langs[] = 'el';
+                  if (!$langs) $langs = ['en'];
+                  $stop2 = [];
+                  foreach ($langs as $lg) if (!empty($STOP_LOCAL[$lg])) foreach ((array) $STOP_LOCAL[$lg] as $w) $stop2[$w] = true;
+
+                  foreach ($units as $u) {
+                    if (count($examplesOut) >= 5) break;
+                    if ($u === '') continue;
+                    if ($isNumeric2($u)) continue;
+                    if (isset($stop2[$u]) || isset($stop2[mb_strtolower($u, 'UTF-8')])) continue;
+                    // Avoid 1-graph tiny tokens
+                    if ($gLen2($u) < 2) continue;
+                    $cand = $u;
+                    // If contains CJK, clamp to configured grapheme length
+                    if (preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $cand)) {
+                      $cand = $gSub2($cand, $cjkMaxLen);
+                    }
+                    if ($cand === '') continue;
+                    if (!isset($examplesOut[$cand])) {
+                      $examplesOut[$cand] = true;
+                      $added++;
+                    }
+                  }
+                }
+              }
           ?>
             <?php if (!empty($examplesOut)): ?>
           <div class="iiif-sc__examples-row">
