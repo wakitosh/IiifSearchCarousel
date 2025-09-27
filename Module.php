@@ -10,6 +10,7 @@ use Laminas\ServiceManager\ServiceLocatorInterface;
 use IiifSearchCarousel\Controller\Admin\ConfigController;
 use Psr\Container\ContainerInterface;
 use IiifSearchCarousel\Form\SettingsForm;
+use IiifSearchCarousel\Job\RebuildImagesJob;
 
 /**
  * Module entry class for IIIF Search Carousel.
@@ -154,7 +155,16 @@ SQL;
     $settings->set('iiif_sc.auto_rebuild_enable', !empty($post['auto_rebuild_enable']));
     $settings->set('iiif_sc.auto_rebuild_interval', $getInt('auto_rebuild_interval', 60));
 
-    $controller->messenger()->addSuccess('IIIF Search Carousel settings were saved.');
+    // Attempt to dispatch a rebuild job after saving settings.
+    try {
+      /** @var \Omeka\Job\Dispatcher $dispatcher */
+      $dispatcher = $services->get('Omeka\\Job\\Dispatcher');
+      $dispatcher->dispatch(RebuildImagesJob::class, []);
+      $controller->messenger()->addSuccess('Settings saved. Rebuild job has been queued.');
+    }
+    catch (\Throwable $e) {
+      $controller->messenger()->addWarning('Settings saved, but failed to queue rebuild job: ' . $e->getMessage());
+    }
     return TRUE;
   }
 

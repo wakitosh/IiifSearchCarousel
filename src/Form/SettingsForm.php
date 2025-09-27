@@ -5,7 +5,6 @@ namespace IiifSearchCarousel\Form;
 use Laminas\Form\Element\Checkbox;
 use Laminas\Form\Element\Number;
 use Laminas\Form\Element\Select;
-use Laminas\Form\Element\Submit;
 use Laminas\Form\Element\Textarea;
 use Laminas\Form\Form;
 use Laminas\I18n\Translator\TranslatorInterface;
@@ -230,12 +229,7 @@ class SettingsForm extends Form {
       'attributes' => ['min' => 1, 'step' => 1],
     ]);
 
-    // Submit.
-    $this->add([
-      'name' => 'rebuild_now',
-      'type' => Submit::class,
-      'attributes' => ['value' => $tr('Save & Rebuild now'), 'class' => 'button'],
-    ]);
+    // Note: Rebuild is triggered automatically on save; no separate submit.
   }
 
 }

@@ -31,7 +31,7 @@ It features multi-target search, auto-rotation, optional auto-rebuild of the ima
 
 1.  Download the module and place the `IiifSearchCarousel` directory in your Omeka S `modules/` folder.
 2.  Log in to your Omeka S admin panel, navigate to **Modules**, and activate "IIIF Search Carousel".
-3.  Configure the module's global settings by navigating to **IIIF Search Carousel** in the left-hand admin menu.
+3.  Configure the module's settings from the standard **Modules** page by clicking the **Settings** button for "IIIF Search Carousel".
 
 ## Configuration
 
@@ -39,7 +39,7 @@ Configuration is split into two levels: global settings for the entire site and 
 
 ### Global Settings (Admin Dashboard)
 
-These settings control the default behavior and image pool for all carousels. Access them from the **IIIF Search Carousel** menu.
+These settings control the default behavior and image pool for all carousels. Access them from the **Modules** page (click the **Settings** button for this module).
 
 - **Number of images:** The total number of images to fetch and keep in the image pool.
 - **Carousel duration:** The time (in seconds) each slide is displayed before auto-rotating.
@@ -170,7 +170,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 
 1.  モジュールをダウンロードし、`IiifSearchCarousel`ディレクトリをOmeka Sの`modules/`フォルダに配置します。
 2.  Omeka Sの管理パネルにログインし、**モジュール**に移動して「IIIF Search Carousel」を有効化します。
-3.  左側の管理メニューから**IIIF Search Carousel**に移動し、モジュールの全体設定を行います。
+3.  モジュール一覧（Modules）ページで当該モジュールの**設定**ボタンから設定画面を開きます。
 
 ## 設定
 
@@ -178,7 +178,23 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 
 ### 全体設定（管理ダッシュボード）
 
-すべてのカルーセルのデフォルトの動作と画像プールを制御します。**IIIF Search Carousel**メニューからアクセスします。
+すべてのカルーセルのデフォルトの動作と画像プールを制御します。**モジュール**一覧の「IIIF Search Carousel」の**設定**ボタンからアクセスします。
+
+## Screenshots
+
+1. Overlay search and examples (desktop)
+
+    ![Overlay search (desktop)](asset/img/screenshot-overlay-desktop.png)
+
+    日本語UI・例リンク（例えば：蘇漫多警署釋  紫文  政談  源氏物語）などが表示されたデスクトップ幅でのオーバーレイ検索の例です。
+
+2. Block admin form (with preview table)
+
+    ![Block admin form](asset/img/screenshot-admin-block.png)
+
+3. Module settings (Modules page -> Settings button)
+
+    ![Module settings](asset/img/screenshot-module-settings.png)
 
 - **画像数:** 画像プールに取得・保持する画像の総数。
 - **カルーセル表示時間:** 各スライドが自動で切り替わるまでの表示時間（秒）。

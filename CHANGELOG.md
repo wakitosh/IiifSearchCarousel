@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.28 - 2025-09-27
+EN:
+- Settings form: Fix a bug where submitting the module settings did not start the rebuild job. Saving now queues `RebuildImagesJob` automatically.
+- UX: Consolidate actions. Removed the bottom "Save & Rebuild now" button; the standard submit saves and triggers rebuild.
+
+JA:
+- 設定フォーム: 設定の送信時にリビルドジョブが起動しない不具合を修正しました。保存後に自動で `RebuildImagesJob` がキュー登録されます。
+- UX: 操作を集約。下部の「保存して今すぐ再生成」ボタンを廃止し、通常の送信ボタンで保存＋リビルドを行うようにしました。
+
 ## 0.2.27 - 2025-09-27
 EN:
 - Block admin form: Remove grouping/fieldset for keyword settings to avoid rendering issues on some setups. Show the two options as plain headings instead.
