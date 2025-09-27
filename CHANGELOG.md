@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.27 - 2025-09-27
+EN:
+- Block admin form: Remove grouping/fieldset for keyword settings to avoid rendering issues on some setups. Show the two options as plain headings instead.
+- Labels: Update to clearer Japanese labels for the two options: "CJKのキーワード最大表示長（グラフェム）" and "キーワード選択時の先頭寄り重み付けの減衰率".
+- Settings access: The settings form is now available from the standard Modules page via the "Settings" button; the left admin menu entry has been removed.
+
+JA:
+- ブロック編集フォーム: キーワード関連の設定に対するグルーピング／フィールドセットを廃止し、環境によって見出しが表示されない問題を回避。2つの設定をそのまま見出しとして表示するように変更。
+- ラベル: 2つの項目のラベルを分かりやすい日本語表現に更新（「CJKのキーワード最大表示長（グラフェム）」「キーワード選択時の先頭寄り重み付けの減衰率」）。
+- 設定画面の入口: 設定フォームはモジュール一覧ページの「設定」ボタンから開く方式に統一し、左側の管理メニューへの項目は削除しました。
+
 ## 0.2.26 - 2025-09-27
 EN:
 - Example keywords: Add per-block settings for CJK maximum display length (graphemes, default 8, range 2–32) and head-biased selection decay (default 0.82, range 0.50–0.99). Strengthen head-bias when decay ≤ 0.6 by exponentiating positional weight and trimming tail candidates.

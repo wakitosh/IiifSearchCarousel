@@ -287,10 +287,10 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       $left->setValue((string) ($block->dataValue('trim_left', 0)));
     }
     $form->add($left);
-
+    // Note: No fieldset/grouping; show fields directly as headings.
     // CJK maximum display length (graphemes)
     $cjkMax = new Number('o:block[__blockIndex__][o:data][cjk_max_len]');
-    $cjkMax->setLabel($view->translate('CJKの最大表示長（グラフェム）', 'iiif-search-carousel'));
+    $cjkMax->setLabel($view->translate('CJKのキーワード最大表示長（グラフェム）', 'iiif-search-carousel'));
     $cjkMax->setAttributes(['min' => 2, 'max' => 32, 'step' => '1']);
     if ($block) {
       $cjkMax->setValue((string) ($block->dataValue('cjk_max_len', 8)));
@@ -303,7 +303,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
 
     // Head-biased selection decay (0.5–0.99).
     $decay = new Number('o:block[__blockIndex__][o:data][head_bias_decay]');
-    $decay->setLabel($view->translate('先頭寄り重み付けの減衰率', 'iiif-search-carousel'));
+    $decay->setLabel($view->translate('キーワード選択時の先頭寄り重み付けの減衰率', 'iiif-search-carousel'));
     $decay->setAttributes(['min' => 0.5, 'max' => 0.99, 'step' => '0.01']);
     if ($block) {
       $decay->setValue((string) ($block->dataValue('head_bias_decay', 0.82)));

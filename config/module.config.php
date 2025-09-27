@@ -79,17 +79,9 @@ return [
     ],
   ],
 
-  'navigation' => [
-    'AdminGlobal' => [
-      [
-        'label' => 'IIIF Search Carousel',
-        'route' => 'iiif-search-carousel-admin',
-        'resource' => ConfigController::class,
-        'pages' => [],
-      ],
-    ],
-  ],
-
+  // Note: No AdminGlobal navigation entry. Settings are managed via the
+  // standard Modules page (configurable = true) to show the Settings button
+  // there, instead of a left admin menu link.
   'view_manager' => [
     'template_path_stack' => [
       __DIR__ . '/../view',
