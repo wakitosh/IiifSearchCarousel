@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.29 - 2025-09-27
+EN:
+- Examples: Guarantee 5/4/3 visible example links (Desktop/Tablet/Mobile). Tighten the tablet breakpoint to `max-width: 820px` and add a server-side fallback that fills up to 5 examples when initial candidates are fewer.
+- Stopwords: Apply stopwords consistently under both MeCab (Mroonga TokenMecab) and the regex fallback. Add Japanese stopwords for standalone "之" and compound forms "卷之" and "巻之".
+
+JA:
+- 例リンク: PC/タブレット/モバイルで 5/4/3 件の表示をより確実にしました。タブレットのブレークポイントを `max-width: 820px` に調整し、候補が不足する場合はテンプレート側で最大5件まで補完するフォールバックを追加。
+- ストップワード: MeCab（Mroonga TokenMecab）使用時と正規表現フォールバックの双方で一貫して適用。日本語のストップワードに「之」（単独のとき）、複合の「卷之」「巻之」を追加。
+
 ## 0.2.28 - 2025-09-27
 EN:
 - Settings form: Fix a bug where submitting the module settings did not start the rebuild job. Saving now queues `RebuildImagesJob` automatically.

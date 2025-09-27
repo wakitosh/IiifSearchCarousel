@@ -22,7 +22,7 @@ Overlay search and examples (desktop)
     - **Multi-Target Search:** Configure searches across Items, Media, and/or Item Sets.
     - **Show/Hide Option:** The search box can be hidden for a display-only carousel.
     - **AND-only Logic:** The search operates with AND-only semantics. The OR control is displayed for clarity but disabled.
-    - **Example Query Links:** Example links are generated from site search terms. The displayed label equals the submitted query and the tooltip matches the label. Multilingual stopwords and numeric-only tokens are skipped. For CJK text, labels are grapheme-safely truncated with a configurable limit (default 8). One-word examples are selected via a noun-preferred score and a head-biased weighted random (configurable decay; default 0.82). When the decay is small (≤ 0.6), the head-bias is further strengthened. Visible examples by viewport: Desktop 5, Tablet 4, Mobile 3.
+    - **Example Query Links:** Example links are generated from site search terms. The displayed label equals the submitted query and the tooltip matches the label. Multilingual stopwords and numeric-only tokens are skipped. For CJK text, labels are grapheme-safely truncated with a configurable limit (default 8). One-word examples are selected via a noun-preferred score and a head-biased weighted random (configurable decay; default 0.82). When the decay is small (≤ 0.6), the head-bias is further strengthened. Visible examples by viewport: Desktop 5, Tablet 4, Mobile 3. The module guarantees up to 5/4/3 visible examples via responsive CSS and a small server-side fallback.
 - **Advanced Image Control:**
     - **Flexible Canvas Selection:** Use powerful rules to select which canvas to display from a manifest (e.g., "the 2nd canvas," "a random canvas from the 3rd to the last-but-one").
     - **IIIF Image Trimming:** Trim images by percentage from any side (top, right, bottom, left) using the `pct:x,y,w,h` region parameter of the IIIF Image API.
@@ -73,6 +73,8 @@ When you add a "IIIF Search Carousel" block to a site page, you can override or 
 // Examples configuration
 - **CJK maximum display length (graphemes):** Grapheme-safe truncation length for example keywords. Default 8. Allowed range: 2–32.
 - **Head-biased selection decay:** Earlier tokens get higher weight. Default 0.82. Smaller values bias more strongly to the head. Allowed range: 0.50–0.99. Additional strengthening applies when ≤ 0.6.
+Notes:
+- Stopwords are applied consistently with and without MeCab (Mroonga TokenMecab). Japanese list includes standalone "之" and compound forms "卷之" and "巻之".
 
 #### Admin-only: Current Selection List (Preview)
 
@@ -161,7 +163,7 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
     - **複数対象検索:** アイテム、メディア、アイテムセットを横断して検索するよう設定できます。
     - **表示/非表示オプション:** 検索ボックスを非表示にして、ディスプレイ専用のカルーセルとしても利用可能です。
     - **AND専用ロジック:** 検索は AND のみで動作します。OR コントロールは視覚的には表示しますが無効化されています。
-    - **例リンク:** サイトの検索語から例リンクを生成します。表示テキスト＝送信クエリで、ツールチップも表示と同一。多言語ストップワードや数字のみの語は除外します。CJKテキストはグラフェム安全に省略し、最大長は設定可能（既定値8）。名詞寄りスコア＋先頭寄り重み付け（減衰率は設定可能、既定値0.82）で1語を選び、減衰率が小さい（≤0.6）場合は先頭寄りがさらに強化されます。表示件数はPC/タブレット/モバイルで5/4/3。
+    - **例リンク:** サイトの検索語から例リンクを生成します。表示テキスト＝送信クエリで、ツールチップも表示と同一。多言語ストップワードや数字のみの語は除外します。CJKテキストはグラフェム安全に省略し、最大長は設定可能（既定値8）。名詞寄りスコア＋先頭寄り重み付け（減衰率は設定可能、既定値0.82）で1語を選び、減衰率が小さい（≤0.6）場合は先頭寄りがさらに強化されます。表示件数はPC/タブレット/モバイルで5/4/3。レスポンシブCSSとサーバ側の軽いフォールバックで最大5/4/3件の表示を保証します。
 - **高度な画像コントロール:**
     - **柔軟なキャンバス選択:** 「2枚目のキャンバス」「3枚目から最後から2枚目までのうちランダムな1枚」など、マニフェストからどのキャンバスを表示するかを強力なルールで指定できます。
     - **IIIF画像トリミング:** IIIF Image APIの`pct:x,y,w,h`領域パラメータを利用して、画像の上下左右をパーセンテージでトリミングできます。
@@ -212,6 +214,8 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 // 例示の設定
 - **CJKの最大表示長（グラフェム）:** 例示キーワードの安全な省略長。既定値8。許容範囲: 2〜32。
 - **先頭寄り重み付けの減衰率:** 文頭に近い語ほど重みを高くする係数。既定値0.82。小さいほど先頭に強く偏ります。許容範囲: 0.50〜0.99。0.6以下では先頭寄りがより強化されます。
+補足:
+- ストップワードは MeCab（Mroonga TokenMecab）の有無にかかわらず一貫して適用されます。日本語リストには単独の「之」と、複合の「巻之」「卷之」を含みます。
 
 #### 管理画面のみ: 現在の選択リスト（プレビュー）
 
