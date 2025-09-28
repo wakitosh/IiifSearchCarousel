@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.30 - 2025-09-28
+EN:
+- Search logic: Support strict AND/OR end-to-end. Persist the selected logic in localStorage and allow runtime override via URL parameter `?logic=and|or`.
+- Examples: Prefer MeCab tokens via Mroonga TokenMecab when available; otherwise fall back to regex segmentation. Apply multilingual stopwords consistently in both paths. Keep Desktop/Tablet/Mobile visible counts at 5/4/3 with server-side fallback.
+
+JA:
+- 検索ロジック: 厳密な AND/OR に対応。選択した論理は localStorage に保存し、URL パラメータ `?logic=and|or` でその場で上書きできます。
+- 例リンク: 利用可能な場合は Mroonga TokenMecab による形態素トークンを優先し、無い場合は正規表現分割にフォールバック。両経路で多言語ストップワードを一貫適用。PC/タブレット/モバイルの表示数 5/4/3 を維持し、テンプレート側のフォールバックで補完します。
+
 ## 0.2.29 - 2025-09-27
 EN:
 - Examples: Guarantee 5/4/3 visible example links (Desktop/Tablet/Mobile). Tighten the tablet breakpoint to `max-width: 820px` and add a server-side fallback that fills up to 5 examples when initial candidates are fewer.
