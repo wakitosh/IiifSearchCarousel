@@ -1,4 +1,4 @@
-// Minimal multi-search for IiifSearchCarousel (AND-only; fulltext_search only)
+// Minimal multi-search for IiifSearchCarousel (use fulltext_search name; other params like logic are left intact)
 (function () {
     if (window.iiifScMultiSearchInstalled) return; // prevent double-install
     window.iiifScMultiSearchInstalled = true;

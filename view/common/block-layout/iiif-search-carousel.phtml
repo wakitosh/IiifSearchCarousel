@@ -10,6 +10,9 @@ $initialTarget = is_array($resourceTargets) && $resourceTargets ? $resourceTarge
 $controller = $controllerMap[$initialTarget] ?? 'item';
 $searchAction = $this->url('site/resource', ['controller' => $controller, 'action' => 'browse'], true);
 $searchValue = $this->escapeHtml($this->params()->fromQuery('fulltext_search', ''));
+// Pick logic from fulltext_logic or logic; default AND
+$logicParam = $this->params()->fromQuery('fulltext_logic', $this->params()->fromQuery('logic', 'and'));
+$logic = (strtolower((string) $logicParam) === 'or') ? 'or' : 'and';
 // Use module text domain for strings.
 $__placeholder = 'Keywords';
 if (strpos((string) $this->lang(), 'ja') === 0) {
@@ -168,13 +171,23 @@ if ($__hasTrim) {
           <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Carousel search form', 'iiif-search-carousel')); ?>">
             <div class="iiif-sc__controls">
               <input type="search" id="multi-search-input" name="fulltext_search" value="<?php echo $searchValue; ?>" placeholder="<?php echo $this->escapeHtml($__placeholder); ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Search keywords', 'iiif-search-carousel')); ?>" pattern=".*\S.*" required class="search-form__input">
-              <input type="hidden" name="logic" value="and">
+              <fieldset class="search-form__logic multi-search-logic">
+                <legend class="sr-only">Search logic</legend>
+                <label class="logic-option">
+                  <input type="radio" name="logic" value="and" <?php echo ($logic === 'and') ? 'checked' : ''; ?>>
+                  <span>AND</span>
+                </label>
+                <label class="logic-option">
+                  <input type="radio" name="logic" value="or" <?php echo ($logic === 'or') ? 'checked' : ''; ?>>
+                  <span>OR</span>
+                </label>
+              </fieldset>
               <button type="submit" class="button"><?php echo $this->escapeHtml($__buttonLabel); ?></button>
             </div>
             <?php
               // Advanced search link (right-aligned), carry current fulltext_search
               $advUrl = $this->url('site/resource', ['controller' => 'item', 'action' => 'search'], true);
-              $advHref = $advUrl . '?fulltext_search=' . rawurlencode((string) $this->params()->fromQuery('fulltext_search', ''));
+              $advHref = $advUrl . '?fulltext_search=' . rawurlencode((string) $this->params()->fromQuery('fulltext_search', '')) . '&logic=' . rawurlencode($logic);
               $__advLabel = $this->plugin('translate')->__invoke('Advanced search', 'iiif-search-carousel');
               // If locale is Japanese, prefer a natural label
               if (strpos((string) $this->lang(), 'ja') === 0) { $__advLabel = '詳細検索'; }
@@ -557,7 +570,7 @@ if ($__hasTrim) {
               <?php foreach (array_keys($examplesOut) as $i => $display): ?>
                 <?php
                   $query = $display;
-                  $href = $baseUrl . '?fulltext_search=' . rawurlencode($query) . '&logic=and';
+                  $href = $baseUrl . '?fulltext_search=' . rawurlencode($query) . '&logic=' . rawurlencode($logic);
                 ?>
                 <a class="iiif-sc__example" href="<?php echo $this->escapeHtml($href); ?>" title="<?php echo $this->escapeHtml($display); ?>"><?php echo $this->escapeHtml($display); ?></a>
               <?php endforeach; ?>
