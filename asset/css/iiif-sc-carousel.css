@@ -69,7 +69,8 @@
 }
 
 /* Prevent line breaks between radio and label text */
-.iiif-sc__search .multi-search-logic {
+.iiif-sc__search .multi-search-logic,
+.iiif-sc__search .search-form__logic {
     display: flex;
     gap: .5rem;
     align-items: center;
@@ -121,7 +122,8 @@
     min-width: 0;
 }
 
-.iiif-sc__controls .multi-search-logic {
+.iiif-sc__controls .multi-search-logic,
+.iiif-sc__controls .search-form__logic {
     flex: 0 0 auto;
     display: flex;
     align-items: flex-start;
@@ -162,7 +164,8 @@
         min-width: 0;
     }
 
-    .iiif-sc__controls .multi-search-logic {
+    .iiif-sc__controls .multi-search-logic,
+    .iiif-sc__controls .search-form__logic {
         gap: .3rem;
         white-space: nowrap;
         justify-content: flex-start;
@@ -192,7 +195,8 @@
         max-width: none;
     }
 
-    .iiif-sc__controls .multi-search-logic {
+    .iiif-sc__controls .multi-search-logic,
+    .iiif-sc__controls .search-form__logic {
         gap: .25rem;
     }
 
@@ -355,9 +359,11 @@
     }
 }
 
-/* Slight downward nudge so radios/labels align visually with input/button */
-.iiif-sc__controls .multi-search-logic {
+/* Align logic radios to the left (no auto-centering) */
+.iiif-sc__controls .multi-search-logic,
+.iiif-sc__controls .search-form__logic {
     margin: auto;
+    justify-content: flex-start;
 }
 
 /* Mobile adjustments */

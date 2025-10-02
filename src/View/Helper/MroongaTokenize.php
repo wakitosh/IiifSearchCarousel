@@ -34,12 +34,16 @@ class MroongaTokenize extends AbstractHelper {
    * @param string $text
    *   Input text.
    *
-   * @return string[] Token strings (may be empty).
+   * @return string[]
+   *   Token strings (may be empty).
    */
   public function __invoke(string $text): array {
     try {
-      $status = $this->connection->fetchOne("SELECT PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME='Mroonga'");
-      if (!is_string($status) || strtoupper($status) !== 'ACTIVE') {
+      // Treat as effectively active when the fulltext_search table
+      // engine is Mroonga.
+      $row = $this->connection->fetchAssociative('SHOW TABLE STATUS LIKE :t', ['t' => 'fulltext_search']);
+      $engine = is_array($row) && isset($row['Engine']) ? (string) $row['Engine'] : '';
+      if (strcasecmp($engine, 'Mroonga') !== 0) {
         return [];
       }
       // Escape string for Groonga command argument.

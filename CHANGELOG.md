@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.31 - 2025-10-02
+EN:
+- Overlay: Ensure the search form is wrapped in an overlay container so it appears on top of the carousel images (absolute inset grid), fixing a regression where it slipped below the carousel.
+- Examples: Prevent bogus CJK concatenations by selecting only the first valid unit before stopwords; validate that the chosen token exists in the source text; remove numeric and 1-grapheme candidates; clamp CJK length by graphemes. Add traceability via data attributes (data-origin, data-path, data-src) on example links.
+- Logic radios: Left-align the AND/OR radio group across breakpoints; remove previous auto-centering margin.
+
+JA:
+- オーバーレイ: 検索フォームをオーバーレイ要素でラップし、カルーセル画像の上に重なるよう修正（absolute + inset + grid）。カルーセル下に落ちるリグレッションを解消。
+- 例リンク: CJK の連結による実在しない語を禁止し、ストップワード前の最初の有効ユニットのみを採用。候補は元テキストに含まれることを検証し、数値・1グラフェムは除外。CJK はグラフェム数でクランプ。例リンクに data-origin / data-path / data-src を付与して出所/経路を追跡可能に。
+- 論理ラジオ: AND/OR を常に左寄せに統一し、以前の自動センタリング調整を廃止。
+
 ## 0.2.30 - 2025-09-28
 EN:
 - Search logic: Support strict AND/OR end-to-end. Persist the selected logic in localStorage and allow runtime override via URL parameter `?logic=and|or`.
