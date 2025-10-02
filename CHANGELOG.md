@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.33 - 2025-10-02
+EN:
+- Logic persistence: Unify the official storage key to `wakitosh.SearchLogic`. Keep backward compatibility by reading/writing legacy keys (`iiif-sc.logic`, `theme.foundation_tsukuba2025.logic`) as well as a cookie and a window-global. Aligns behavior with the Foundation_Tsukuba2025 theme.
+
+JA:
+- 論理の永続化: 公式キーを `wakitosh.SearchLogic` に統一。互換のため旧キー（`iiif-sc.logic`, `theme.foundation_tsukuba2025.logic`）にも読み書きし、Cookie と window グローバルも併用。Foundation_Tsukuba2025 テーマと挙動を揃えました。
+
+## 0.2.32 - 2025-10-02
+EN:
+- Overlay search: Persist OR/AND reliably across navigation. The selected logic now updates example/advanced links' query strings and is mirrored into a hidden `fulltext_logic` field on submit, aligning with backend expectations and the site header search.
+
+JA:
+- オーバーレイ検索: ページ遷移後も OR/AND を確実に維持。選択した論理を例リンク／詳細検索リンクのクエリに反映し、送信時に hidden の `fulltext_logic` にも同期。バックエンドおよびヘッダー検索と整合します。
+
 ## 0.2.31 - 2025-10-02
 EN:
 - Overlay: Ensure the search form is wrapped in an overlay container so it appears on top of the carousel images (absolute inset grid), fixing a regression where it slipped below the carousel.
