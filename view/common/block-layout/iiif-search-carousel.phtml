@@ -201,7 +201,7 @@ if ($__hasTrim) {
         if ($headBiasDecay > 0.99) { $headBiasDecay = 0.99; }
         $jsonPath = __DIR__ . '/../../../config/stopwords.json';
 
-        $formatExample = function ($s) use ($cjkMaxLen, $headBiasDecay, $jsonPath) {
+  $formatExample = function ($s) use ($cjkMaxLen, $headBiasDecay, $jsonPath) {
           $s = (string) $s;
           $s = preg_replace('/[\[\]\(\)\<\>]/u', '', $s);
           $s = preg_replace('/^[\p{P}\p{S}\s\x{3000}]+|[\p{P}\p{S}\s\x{3000}]+$/u', '', $s);
@@ -235,21 +235,40 @@ if ($__hasTrim) {
           }
 
           $weightedPick = static function (array $cands): string {
-            $sum = 0.0;
-            foreach ($cands as $c) { $w = (float) ($c['weight'] ?? 0.0); if ($w > 0) $sum += $w; }
-            if ($sum <= 0.0) return '';
-            $scale = 1000000;
-            $r = random_int(0, (int) max(1, (int) round($sum * $scale) - 1));
-            $acc = 0.0;
+            // Filter invalid/empty weights and values first.
+            $valid = [];
             foreach ($cands as $c) {
-              $w = (float) ($c['weight'] ?? 0.0);
-              if ($w <= 0) continue;
-              $acc += $w;
-              if (($acc * $scale) > $r) return (string) ($c['value'] ?? '');
+              $v = isset($c['value']) ? (string) $c['value'] : '';
+              $w = isset($c['weight']) ? (float) $c['weight'] : 0.0;
+              if ($v === '' || $w <= 0.0 || !is_finite($w)) continue;
+              $valid[] = ['value' => $v, 'weight' => $w];
             }
-            return (string) ($cands[count($cands) - 1]['value'] ?? '');
+            if (!$valid) return '';
+            // Sum weights with finite check.
+            $sum = 0.0; $maxW = -INF; $maxV = '';
+            foreach ($valid as $c) {
+              $w = (float) $c['weight'];
+              $sum += $w;
+              if ($w > $maxW) { $maxW = $w; $maxV = (string) $c['value']; }
+            }
+            if (!is_finite($sum) || $sum <= 0.0) return $maxV;
+            // Draw uniform threshold in [0, 1) to avoid sum boundary.
+            try {
+              $r = random_int(0, 1000000000 - 1) / 1000000000.0; // [0,1)
+            } catch (\Throwable $e) {
+              $r = (mt_rand() & 0x7fffffff) / ((float) (mt_getrandmax() + 1));
+            }
+            $threshold = $r * $sum; // [0, sum)
+            $acc = 0.0; $eps = 1e-12;
+            foreach ($valid as $c) {
+              $acc += (float) $c['weight'];
+              if ($acc + $eps >= $threshold) return (string) $c['value'];
+            }
+            // Fallback: return argmax to avoid tail bias.
+            return $maxV;
           };
 
+          // Language detection and stopword set
           $strAll = implode(' ', $tokens);
           $langs = [];
           if (preg_match('/[\x{3040}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $strAll)) $langs[] = 'ja';
@@ -258,13 +277,16 @@ if ($__hasTrim) {
           if (!$langs) $langs = ['en'];
           $stop = [];
           foreach ($langs as $lang) if (!empty($STOP[$lang])) foreach ((array) $STOP[$lang] as $w) $stop[$w] = true;
+          $textSrc = ($strAll !== '') ? $strAll : $s;
 
           $path = '';
           $chosen = '';
           $candNonCjk = [];
           $DECAY = $headBiasDecay;
-          $biasExp = ($DECAY <= 0.6) ? 1.8 : 1.0;
-          $tailTrimRatio = ($DECAY <= 0.6) ? 0.6 : 1.0;
+          // Strengthen bias exponent further when strong head-bias.
+          $biasExp = ($DECAY <= 0.6) ? 2.4 : 1.0;
+          // When strong head-bias (<=0.6), trim tail more aggressively.
+          $tailTrimRatio = ($DECAY <= 0.6) ? 0.5 : 1.0;
           $total = count($tokens);
           $maxIdx = $total > 0 ? (int) floor(($total * $tailTrimRatio) - 1) : -1;
           foreach ($tokens as $idx => $t) {
@@ -272,6 +294,8 @@ if ($__hasTrim) {
             $tStripped = trim($t, ".,;:!?\"'()[]<>");
             if ($tStripped === '') continue;
             if ($isNumeric($tStripped)) continue;
+            // Exclude 1-character tokens for non-CJK weighted selection.
+            if ($gLen($tStripped) < 2) continue;
             $tLower = mb_strtolower($tStripped, 'UTF-8');
             if (isset($stop[$tLower]) || isset($stop[$tStripped])) continue;
             $posWeight = pow(pow($DECAY, (float) $idx), $biasExp);
@@ -291,36 +315,40 @@ if ($__hasTrim) {
               $tokensFromM = $this->mroongaTokenize($textSrc);
               if ($tokensFromM) {
                 $jaStop = isset($STOP['ja']) && is_array($STOP['ja']) ? array_fill_keys($STOP['ja'], true) : [];
-                $cands = [];
-                $best = '';
-                $bestScore = -INF;
-                $tCount = count($tokensFromM);
-                $maxIdx = $tCount > 0 ? (int) floor(($tCount * $tailTrimRatio) - 1) : -1;
-                foreach ($tokensFromM as $idx => $u) {
-                  if ($tailTrimRatio < 1.0 && $idx > $maxIdx) { continue; }
-                  $u = preg_replace('/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/u', '', (string) $u);
-                  if ($u === '') continue;
-                  if ($isNumeric($u)) continue;
-                  if (isset($jaStop[$u])) continue;
-                  if ($gLen($u) < 2) continue;
-                  $score = 0;
-                  if (preg_match('/[\x{4E00}-\x{9FFF}]/u', $u)) $score += 2;
-                  if (preg_match('/[\x{30A0}-\x{30FF}ー]/u', $u)) $score += 1;
-                  if (preg_match('/^[\x{3040}-\x{309F}]+$/u', $u)) $score -= 1;
-                  $len = $gLen($u);
-                  if ($len >= 2 && $len <= 3) $score += 2; elseif ($len === 4) $score += 1; elseif ($len >= 5) $score -= 1;
-                  if ($score > $bestScore) { $bestScore = $score; $best = $u; }
-                  $base = max(0.2, $score + 2.0);
-                  $posWeight = pow(pow($DECAY, (float) $idx), $biasExp);
-                  $cands[] = [ 'value' => $u, 'weight' => $base * $posWeight ];
+                $acc = '';
+                foreach ($tokensFromM as $idx => $tokRaw) {
+                  // Stop on punctuation/space tokens as boundaries.
+                  if (preg_match('/^[\p{P}\p{S}\s]+$/u', (string) $tokRaw)) break;
+                  // Clean edges of punctuation/spaces.
+                  $u = preg_replace('/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/u', '', (string) $tokRaw);
+                  if ($u === '') break;
+                  // Stop at stopwords when encountered.
+                  if (isset($jaStop[$u])) break;
+                  // Numbers: skip if nothing accumulated yet, otherwise stop.
+                  if ($isNumeric($u)) { if ($acc !== '') break; else continue; }
+                  // If adding this token would exceed max, add partial then stop.
+                  $remain = $cjkMaxLen - $gLen($acc);
+                  if ($remain <= 0) break;
+                  $lenU = $gLen($u);
+                  if ($lenU > $remain) {
+                    // If we have nothing yet and partial would be 1 char, try to skip this token to seek a better next; otherwise add partial.
+                    if ($acc === '' && $remain < 2) {
+                      continue;
+                    }
+                    $acc .= $gSub($u, $remain);
+                    break;
+                  }
+                  $acc .= $u;
+                  if ($gLen($acc) >= $cjkMaxLen) break;
                 }
-                $picked = $weightedPick($cands);
-                if ($picked === '' && $best !== '') $picked = $best;
-                if ($picked !== '') $pickedByMroonga = $gSub($picked, $cjkMaxLen);
+                // Finalize: must be >=2 chars to be useful.
+                if ($gLen($acc) >= 2) {
+                  $pickedByMroonga = $acc;
+                }
               }
             } catch (\Throwable $e) {}
             if ($pickedByMroonga !== '') {
-              $chosen = $pickedByMroonga; $path = 'mroonga_weighted';
+              $chosen = $pickedByMroonga; $path = 'mroonga_concat';
             } else {
               $jaStop = isset($STOP['ja']) && is_array($STOP['ja']) ? array_fill_keys($STOP['ja'], true) : [];
               $unitsAll = [];
@@ -354,37 +382,31 @@ if ($__hasTrim) {
 
         $examples = [];
         $seen = [];
+        $normalizeDisp = function (string $s): string {
+          $s = trim($s);
+          if ($s === '') return '';
+          if (function_exists('mb_strtolower')) $s = mb_strtolower($s, 'UTF-8');
+          $s = preg_replace('/[\s\x{3000}]+/u', ' ', $s);
+          $s = preg_replace('/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/u', '', $s);
+          return (string) $s;
+        };
         foreach ($exampleSource as $t) {
-          if (count($examples) >= 6) break;
+          if (count($examples) >= 4) break;
           $res = $formatExample((string) $t);
           $display = is_array($res) ? (string) ($res['display'] ?? '') : (string) $res;
           $path = is_array($res) ? (string) ($res['path'] ?? 'unknown') : 'unknown';
           if ($display === '') continue;
-          if (!isset($seen[$display])) {
-            $seen[$display] = true;
-            $examples[] = [ 'display' => $display, 'origin' => 'primary', 'path' => $path, 'src' => (string) $t ];
+          $dispKey = $normalizeDisp($display);
+          if ($dispKey === '') continue;
+          if (!isset($seen[$dispKey])) {
+            $seen[$dispKey] = true;
+            $srcVal = (string) $t;
+            $examples[] = [ 'display' => $display, 'origin' => 'primary', 'path' => $path, 'src' => $srcVal ];
           }
         }
-        if (!$examples) {
-          $limit = 12;
-          $trimRaw = function (string $ss) use ($limit): string {
-            if ($ss === '') return '';
-            if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-              return (mb_strlen($ss, 'UTF-8') > $limit) ? (mb_substr($ss, 0, $limit, 'UTF-8')) : $ss;
-            }
-            return (strlen($ss) > $limit) ? substr($ss, 0, $limit) : $ss;
-          };
-          foreach ($exampleSource as $t) {
-            if (count($examples) >= 5) break;
-            $raw = trim((string) $t);
-            if ($raw === '') continue;
-            $disp = $trimRaw($raw);
-            if ($disp === '') continue;
-            if (!isset($seen[$disp])) {
-              $seen[$disp] = true;
-              $examples[] = [ 'display' => $disp, 'origin' => 'fallback_raw', 'path' => 'raw_trim', 'src' => (string) $t ];
-            }
-          }
+        // Hard cap to 4 (フォールバック廃止)
+        if (count($examples) > 4) {
+          $examples = array_slice($examples, 0, 4);
         }
       ?>
       <?php if (!empty($examples)): ?>

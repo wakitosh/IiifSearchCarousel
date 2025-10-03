@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.34 - 2025-10-03
+EN:
+- Examples: Remove all supplemental fallbacks and cap example keywords to 4. No regex fill-up; only primary path outputs, keeping uniqueness.
+- Non-CJK: Exclude 1-character tokens from the weighted selection to avoid trivial examples.
+- Settings cleanup: Remove the admin setting for head-bias decay; front-end now uses a fixed internal value (0.82). UI and backend references to the setting were removed.
+
+JA:
+- 例キーワード: 補完フォールバックを全廃し、例キーワードは最大4件に固定。regex での埋め合わせは行わず、一次経路のみで生成（重複は回避）。
+- 非CJK: 重み付き選択で1文字の語を除外し、形だけの候補を防止。
+- 設定の整理: 先頭寄り減衰（head_bias_decay）の管理項目を削除。フロントは内部固定値（0.82）のみ使用。UIとバックエンドの該当箇所を撤去。
+
 ## 0.2.33 - 2025-10-02
 EN:
 - Logic persistence: Unify the official storage key to `wakitosh.SearchLogic`. Keep backward compatibility by reading/writing legacy keys (`iiif-sc.logic`, `theme.foundation_tsukuba2025.logic`) as well as a cookie and a window-global. Aligns behavior with the Foundation_Tsukuba2025 theme.

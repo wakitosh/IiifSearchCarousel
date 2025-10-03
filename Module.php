@@ -111,6 +111,8 @@ SQL;
       'aspect_ratio_h_md' => (int) ($settings->get('iiif_sc.aspect_ratio_h_md') ?? 9),
       'selection_rules' => (string) ($settings->get('iiif_sc.selection_rules') ?? "1 => 1\n2 => 2\n3+ => random(2-last-1)"),
       'truncate_title_length' => (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0),
+    // Module-wide defaults for example keywords.
+      'cjk_max_len' => (int) ($settings->get('iiif_sc.cjk_max_len') ?? 8),
       'manifest_urls' => (string) ($settings->get('iiif_sc.manifest_urls') ?? ''),
       'auto_rebuild_enable' => (bool) ($settings->get('iiif_sc.auto_rebuild_enable') ?? FALSE),
       'auto_rebuild_interval' => (int) ($settings->get('iiif_sc.auto_rebuild_interval') ?? 60),
@@ -151,6 +153,8 @@ SQL;
     $settings->set('iiif_sc.aspect_ratio_h_md', $getInt('aspect_ratio_h_md', 9));
     $settings->set('iiif_sc.selection_rules', $getStr('selection_rules', "1 => 1\n2 => 2\n3+ => random(2-last-1)"));
     $settings->set('iiif_sc.truncate_title_length', $getInt('truncate_title_length', 0));
+    // Module-wide defaults for example keywords.
+    $settings->set('iiif_sc.cjk_max_len', $getInt('cjk_max_len', 8));
     $settings->set('iiif_sc.manifest_urls', $getStr('manifest_urls', ''));
     $settings->set('iiif_sc.auto_rebuild_enable', !empty($post['auto_rebuild_enable']));
     $settings->set('iiif_sc.auto_rebuild_interval', $getInt('auto_rebuild_interval', 60));

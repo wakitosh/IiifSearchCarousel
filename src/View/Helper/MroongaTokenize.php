@@ -66,6 +66,8 @@ class MroongaTokenize extends AbstractHelper {
       // Flatten any nested arrays, collecting string leaves or
       // ['value'=>string].
       $tokens = [];
+      // Preserve original order: push children in reverse
+      // so LIFO pops left-to-right.
       $stack = [$decoded];
       while ($stack) {
         $node = array_pop($stack);
@@ -74,8 +76,9 @@ class MroongaTokenize extends AbstractHelper {
             $tokens[] = $node['value'];
           }
           else {
-            foreach ($node as $child) {
-              $stack[] = $child;
+            $children = array_values($node);
+            for ($i = count($children) - 1; $i >= 0; $i--) {
+              $stack[] = $children[$i];
             }
           }
         }

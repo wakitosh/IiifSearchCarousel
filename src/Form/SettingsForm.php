@@ -215,6 +215,17 @@ class SettingsForm extends Form {
       'attributes' => ['min' => 0, 'step' => 1],
     ]);
 
+    // Example keyword defaults (module-wide): allow blocks to inherit.
+    $this->add([
+      'name' => 'cjk_max_len',
+      'type' => Number::class,
+      'options' => [
+        'label' => $tr('Default CJK max display length (graphemes)'),
+        'info' => $tr('Used when a block does not override it. Range: 2–32. Default: 8.'),
+      ],
+      'attributes' => ['min' => 2, 'max' => 32, 'step' => 1],
+    ]);
+
     // Auto rebuild (poor-man's cron on visit)
     $this->add([
       'name' => 'auto_rebuild_enable',

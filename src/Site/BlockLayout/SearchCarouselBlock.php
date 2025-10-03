@@ -172,6 +172,25 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $trimBottom = (float) ($block->dataValue('trim_bottom', 0));
     $trimLeft = (float) ($block->dataValue('trim_left', 0));
 
+    // Resolve example keyword parameters with fallback priority:
+    // block override > module settings > hardcoded defaults.
+    $blockCjk = $block->dataValue('cjk_max_len');
+    if ($blockCjk !== NULL && $blockCjk !== '') {
+      $cjkMaxLenEff = (int) $blockCjk;
+    }
+    else {
+      $cjkMaxLenEff = (int) ($settings->get('iiif_sc.cjk_max_len') ?? 8);
+    }
+    if ($cjkMaxLenEff < 2) {
+      $cjkMaxLenEff = 2;
+    }
+    if ($cjkMaxLenEff > 32) {
+      $cjkMaxLenEff = 32;
+    }
+
+    // head_bias_decay 設定は廃止。内部固定値を使用.
+    $headBiasDecayEff = 0.82;
+
     return $view->partial('common/block-layout/iiif-search-carousel', [
       'rows' => $rows,
       'ratioDefault' => $ratioDefault,
@@ -190,9 +209,9 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       'trimLeft' => $trimLeft,
       'showSearch' => (bool) $block->dataValue('show_search', TRUE),
       'exampleTerms' => $exampleTerms,
-      // New configurable parameters with safe defaults.
-      'cjkMaxLen' => (int) ($block->dataValue('cjk_max_len', 8)),
-      'headBiasDecay' => (float) ($block->dataValue('head_bias_decay', 0.82)),
+      // Example keyword parameters (effective values after fallback).
+      'cjkMaxLen' => $cjkMaxLenEff,
+      'headBiasDecay' => $headBiasDecayEff,
     ]);
   }
 
@@ -292,28 +311,32 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     $cjkMax = new Number('o:block[__blockIndex__][o:data][cjk_max_len]');
     $cjkMax->setLabel($view->translate('CJKのキーワード最大表示長（グラフェム）', 'iiif-search-carousel'));
     $cjkMax->setAttributes(['min' => 2, 'max' => 32, 'step' => '1']);
+    // Do not set a value by default to allow inheritance when left blank.
+    // Show module default as a placeholder.
+    try {
+      $moduleDefaultCjk = (int) ($this->services->get('Omeka\Settings')->get('iiif_sc.cjk_max_len') ?? 8);
+    }
+    catch (\Throwable $e) {
+      $moduleDefaultCjk = 8;
+    }
     if ($block) {
-      $cjkMax->setValue((string) ($block->dataValue('cjk_max_len', 8)));
+      $existing = $block->dataValue('cjk_max_len');
+      if ($existing !== NULL && $existing !== '') {
+        $cjkMax->setValue((string) $existing);
+      }
     }
-    else {
-      $cjkMax->setValue('8');
-    }
-    $cjkMax->setOption('info', $view->translate('例示キーワードを結合文字や絵文字に配慮して安全に切り詰めます。許容範囲: 2〜32。既定値: 8。', 'iiif-search-carousel'));
+    $cjkMax->setAttribute('placeholder', (string) $moduleDefaultCjk);
+    $infoCjk = sprintf(
+      $view->translate(
+        '空欄の場合はモジュール設定を継承します（現在の既定: %s）。',
+        'iiif-search-carousel'
+      ),
+      (string) $moduleDefaultCjk
+    );
+    $cjkMax->setOption('info', $infoCjk);
     $form->add($cjkMax);
 
-    // Head-biased selection decay (0.5–0.99).
-    $decay = new Number('o:block[__blockIndex__][o:data][head_bias_decay]');
-    $decay->setLabel($view->translate('キーワード選択時の先頭寄り重み付けの減衰率', 'iiif-search-carousel'));
-    $decay->setAttributes(['min' => 0.5, 'max' => 0.99, 'step' => '0.01']);
-    if ($block) {
-      $decay->setValue((string) ($block->dataValue('head_bias_decay', 0.82)));
-    }
-    else {
-      $decay->setValue('0.82');
-    }
-    $decay->setOption('info', $view->translate('文頭に近い語ほど選ばれやすくするための減衰率です。値が小さいほど先頭に強く偏ります。許容範囲: 0.50〜0.99。既定値: 0.82。', 'iiif-search-carousel'));
-    $form->add($decay);
-
+    // Head-biased selection decay (0.5–0.99). head_bias_decay のフォーム項目は削除.
     // Append current selection preview (read-only list from iiif_sc_images).
     // Show up to 50 entries for performance.
     $html = $view->formCollection($form, FALSE);
@@ -486,8 +509,8 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       $data['show_search'] = (bool) $data['show_search'];
     }
 
-    // Normalize CJK maximum display length (int, 2..32).
-    if (isset($data['cjk_max_len'])) {
+    // Normalize CJK maximum display length (int, 2..32) only if provided.
+    if (array_key_exists('cjk_max_len', $data) && $data['cjk_max_len'] !== '' && $data['cjk_max_len'] !== NULL) {
       $v = (int) $data['cjk_max_len'];
       if ($v < 2) {
         $v = 2;
@@ -498,27 +521,12 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       $data['cjk_max_len'] = $v;
     }
     else {
-      $data['cjk_max_len'] = 8;
+      // Unset to inherit module default at render time.
+      unset($data['cjk_max_len']);
     }
 
-    // Normalize head-biased decay (float, 0.5..0.99).
-    if (isset($data['head_bias_decay'])) {
-      $f = (float) $data['head_bias_decay'];
-      if (!is_numeric((string) $data['head_bias_decay'])) {
-        $f = 0.82;
-      }
-      if ($f < 0.5) {
-        $f = 0.5;
-      }
-      if ($f > 0.99) {
-        $f = 0.99;
-      }
-      // Round to 2 decimals to avoid noisy diffs.
-      $data['head_bias_decay'] = (float) number_format($f, 2, '.', '');
-    }
-    else {
-      $data['head_bias_decay'] = 0.82;
-    }
+    // head_bias_decay は廃止。何か残っていたら無視するためunset.
+    unset($data['head_bias_decay']);
 
     $block->setData($data);
   }
