@@ -332,8 +332,8 @@ class SearchCarouselBlock extends AbstractBlockLayout {
         return $out;
       };
 
-      // Collect up to 20 random titles and extract tokens.
-      $sql = "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' ORDER BY RAND() LIMIT 20";
+      // Collect up to 60 random titles and extract tokens.
+      $sql = "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' ORDER BY RAND() LIMIT 60";
       $titles = (array) $connection->fetchFirstColumn($sql);
       $pool = [];
       foreach ($titles as $t) {
