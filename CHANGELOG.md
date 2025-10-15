@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.35 - 2025-10-15
+EN:
+- Examples: Exclude stopwords across all supported languages (en/ja/de/fr/es/it/la/el) when generating example keywords. Normalizes Latin tokens to lowercase for matching; CJK tokens are matched verbatim.
+- Backend-aware minimum length: Align minimum token length for Latin/Digit with the actual full-text backend. Require ≥4 by default (InnoDB/MySQL defaults); allow ≥2 when the `fulltext_search` engine is Mroonga. Prevents 3-letter Latin fragments (e.g., "tku") from appearing when they won't match search.
+- Style: PSR-12 fixes around comments/indentation; unused variables removed.
+
+JA:
+- 例示: 例キーワード生成時に全言語（en/ja/de/fr/es/it/la/el）のストップワードを除外。ラテン系は小文字化して照合、CJK はそのまま照合します。
+- バックエンド対応の最小長: ラテン/数字の最小語長を全文検索バックエンドに合わせて調整。既定は4（InnoDB/MySQL相当）、`fulltext_search` が Mroonga の場合は2以上を許容。検索でヒットしない3文字の英字断片（例: "tku"）が例示に出ないようにします。
+- スタイル: コメント/インデントのPSR-12整備と未使用変数の整理。
+
 ## 0.2.34 - 2025-10-03
 EN:
 - Examples: Remove all supplemental fallbacks and cap example keywords to 4. No regex fill-up; only primary path outputs, keeping uniqueness.

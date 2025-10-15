@@ -113,30 +113,250 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     // Title truncation length (front captions/aria). 0 = no truncation.
     $truncateLen = (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0);
 
-    // Build example keywords from fulltext index (randomized per render).
+    // Build example keywords from fulltext index with tokenization rules.
+    // Rules: cut at brackets and punctuation,
+    // split when character class changes
+    // (Kanji/Hiragana/Katakana/Latin/Digit). Filter too-short tokens.
+    // Additionally, exclude stopwords across ALL supported languages.
+    // This is independent of the current site UI language, and uses
+    // config/stopwords.json.
     $exampleTerms = [];
     try {
-      // Collect up to 20 random titles from fulltext index.
+      // Detect fulltext_search backend engine to align minimum token length
+      // with the actual searchable threshold (e.g., InnoDB default is 4,
+      // Mroonga often allows 1-2 with n-gram/token filters).
+      $latinMinLen = 4;
+      $digitMinLen = 4;
+      try {
+        $row = $connection->fetchAssociative('SHOW TABLE STATUS LIKE :t', ['t' => 'fulltext_search']);
+        $engine = isset($row['Engine']) ? (string) $row['Engine'] : '';
+        if (strcasecmp($engine, 'Mroonga') === 0) {
+          $latinMinLen = 2;
+          $digitMinLen = 2;
+        }
+      }
+      catch (\Throwable $e) {
+        // Best-effort: keep defaults.
+      }
+      // Helper: classify a single UTF-8 character.
+      $classify = function (string $ch): string {
+        if ($ch === '') {
+          return 'Other';
+        }
+        if (preg_match('/\p{Han}/u', $ch)) {
+          return 'Han';
+        }
+        if (preg_match('/\p{Hiragana}/u', $ch)) {
+          return 'Hira';
+        }
+        if (preg_match('/\p{Katakana}/u', $ch)) {
+          return 'Kata';
+        }
+        if (preg_match('/[A-Za-z]/u', $ch)) {
+          return 'Latin';
+        }
+        if (preg_match('/[0-9]/u', $ch)) {
+          return 'Digit';
+        }
+        return preg_match('/\p{Nd}/u', $ch) ? 'Digit' : 'Other';
+      };
+
+      // Helper: return true if punctuation or separator (spaces etc.).
+      $isSep = function (string $ch): bool {
+        if ($ch === '') {
+          return TRUE;
+        }
+        // Unicode punctuation or separators.
+        $punct = '/[\p{P}\p{Z}]/u';
+        if (preg_match($punct, $ch)) {
+          return TRUE;
+        }
+        // Additional CJK brackets/marks.
+        $marks = '/[（）\(\)［\]【】〈〉《》〔〕｛｝{}＜＞・、。„“‟„「」『』—–‐‑〜]/u';
+        if (preg_match($marks, $ch)) {
+          return TRUE;
+        }
+        return FALSE;
+      };
+
+      // Normalize a token for comparison with stopwords.
+      // For Latin, use lowercase; for others, use verbatim.
+      // Trim surrounding spaces.
+      $normalizeToken = function (string $tok) use ($classify): string {
+        $tok = trim($tok);
+        if ($tok === '') {
+          return '';
+        }
+        $head = function_exists('mb_substr')
+          ? mb_substr($tok, 0, 1, 'UTF-8')
+          : substr($tok, 0, 1);
+        $cls = $classify($head);
+        if ($cls === 'Latin') {
+          if (function_exists('mb_strtolower')) {
+            return mb_strtolower($tok, 'UTF-8');
+          }
+          return strtolower($tok);
+        }
+        return $tok;
+      };
+
+      // Load stopwords.json and build a merged set across all languages.
+      static $stopwordSet = NULL;
+      if ($stopwordSet === NULL) {
+        $stopwordSet = [];
+        $path = __DIR__ . '/../../../config/stopwords.json';
+        try {
+          if (is_readable($path)) {
+            $json = file_get_contents($path);
+            $data = json_decode((string) $json, TRUE);
+            if (is_array($data)) {
+              foreach ($data as $list) {
+                if (!is_array($list)) {
+                  continue;
+                }
+                foreach ($list as $w) {
+                  if (!is_string($w)) {
+                    continue;
+                  }
+                  $nw = $normalizeToken($w);
+                  if ($nw !== '') {
+                    $stopwordSet[$nw] = TRUE;
+                  }
+                }
+              }
+            }
+          }
+        }
+        catch (\Throwable $e) {
+          // If loading fails, just proceed with an empty set.
+          $stopwordSet = [];
+        }
+      }
+      $isStopword = function (string $tok) use ($normalizeToken, $stopwordSet): bool {
+        $nw = $normalizeToken($tok);
+        if ($nw === '') {
+          // Treat empty as stopword-equivalent to ease filtering.
+          return TRUE;
+        }
+        return isset($stopwordSet[$nw]);
+      };
+
+      // Extract tokens from a title according to the rules above.
+      $extractTokens = function (string $title) use ($classify, $isSep, $isStopword, $latinMinLen, $digitMinLen): array {
+        $title = trim($title);
+        if ($title === '') {
+          return [];
+        }
+        // Cut at first bracket entirely.
+        if (preg_match('/[\(\)（）［\]【】〈〉《》〔〕｛｝{}＜＞]/u', $title, $m, PREG_OFFSET_CAPTURE)) {
+          $pos = isset($m[0][1]) ? (int) $m[0][1] : 0;
+          if ($pos > 0) {
+            $title = function_exists('mb_substr') ? mb_substr($title, 0, $pos, 'UTF-8') : substr($title, 0, $pos);
+          }
+        }
+        $len = function_exists('mb_strlen') ? mb_strlen($title, 'UTF-8') : strlen($title);
+        $tokens = [];
+        $buf = '';
+        $prevClass = '';
+        for ($i = 0; $i < $len; $i++) {
+          $ch = function_exists('mb_substr')
+            ? mb_substr($title, $i, 1, 'UTF-8')
+            : substr($title, $i, 1);
+          if ($isSep($ch)) {
+            if ($buf !== '') {
+              $tokens[] = $buf;
+              $buf = '';
+              $prevClass = '';
+            }
+            continue;
+          }
+          $cls = $classify($ch);
+          if ($buf === '') {
+            $buf = $ch;
+            $prevClass = $cls;
+            continue;
+          }
+          if ($cls !== $prevClass) {
+            // Split on character-class boundary.
+            $tokens[] = $buf;
+            $buf = $ch;
+            $prevClass = $cls;
+          }
+          else {
+            $buf .= $ch;
+          }
+        }
+        if ($buf !== '') {
+          $tokens[] = $buf;
+        }
+        // Filter tokens: drop too-short by class, then trim.
+        $out = [];
+        foreach ($tokens as $tok) {
+          $tok = trim($tok);
+          if ($tok === '') {
+            continue;
+          }
+          $head = function_exists('mb_substr')
+            ? mb_substr($tok, 0, 1, 'UTF-8')
+            : substr($tok, 0, 1);
+          $cls = $classify($head);
+          $n = function_exists('mb_strlen') ? mb_strlen($tok, 'UTF-8') : strlen($tok);
+          if (in_array($cls, ['Han', 'Hira', 'Kata'], TRUE)) {
+            if ($n < 2) {
+              // 1文字は弱い。
+              continue;
+            }
+          }
+          elseif ($cls === 'Latin') {
+            if ($n < $latinMinLen) {
+              // 1文字は除外（例: "N"）。
+              continue;
+            }
+          }
+          elseif ($cls === 'Digit') {
+            if ($n < $digitMinLen) {
+              continue;
+            }
+          }
+          else {
+            if ($n < 2) {
+              continue;
+            }
+          }
+          // Exclude stopwords (all languages).
+          if ($isStopword($tok)) {
+            continue;
+          }
+          $out[] = $tok;
+        }
+        return $out;
+      };
+
+      // Collect up to 20 random titles and extract tokens.
       $sql = "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' ORDER BY RAND() LIMIT 20";
       $titles = (array) $connection->fetchFirstColumn($sql);
+      $pool = [];
       foreach ($titles as $t) {
-        $t = trim((string) $t);
-        if ($t === '') {
-          continue;
+        foreach ($extractTokens((string) $t) as $tok) {
+          if (!in_array($tok, $pool, TRUE)) {
+            $pool[] = $tok;
+          }
+          if (count($pool) >= 32) {
+            // Keep pool small.
+            break;
+          }
         }
-        // Deduplicate preserving order.
-        if (!in_array($t, $exampleTerms, TRUE)) {
-          $exampleTerms[] = $t;
-        }
-        if (count($exampleTerms) >= 8) {
-          // Keep small working set.
+        if (count($pool) >= 32) {
           break;
         }
       }
-      // Shuffle and limit to 4 examples.
-      if ($exampleTerms) {
-        shuffle($exampleTerms);
-        $exampleTerms = array_slice($exampleTerms, 0, 4);
+      if ($pool) {
+        // Shuffle and pick top 4 for display.
+        shuffle($pool);
+        $exampleTerms = array_slice($pool, 0, 4);
+      }
+      else {
+        $exampleTerms = [];
       }
     }
     catch (\Throwable $e) {
