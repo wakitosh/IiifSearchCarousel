@@ -351,9 +351,155 @@ class SearchCarouselBlock extends AbstractBlockLayout {
         }
       }
       if ($pool) {
-        // Shuffle and pick top 4 for display.
-        shuffle($pool);
-        $exampleTerms = array_slice($pool, 0, 4);
+        // Locale/device-aware quotas:
+        // - Split pool into CJK vs Latin (and neutral)
+        // - Select according to UI locale and device class.
+        $isCjkToken = function (string $tok) use ($classify): bool {
+          if ($tok === '') {
+            return FALSE;
+          }
+          $head = function_exists('mb_substr') ? mb_substr($tok, 0, 1, 'UTF-8') : substr($tok, 0, 1);
+          $cls = $classify($head);
+          return in_array($cls, ['Han', 'Hira', 'Kata'], TRUE);
+        };
+        $isLatinToken = function (string $tok) use ($classify): bool {
+          if ($tok === '') {
+            return FALSE;
+          }
+          $head = function_exists('mb_substr') ? mb_substr($tok, 0, 1, 'UTF-8') : substr($tok, 0, 1);
+          return $classify($head) === 'Latin';
+        };
+        $isDigitOrOther = function (string $tok) use ($classify): bool {
+          if ($tok === '') {
+            return TRUE;
+          }
+          $head = function_exists('mb_substr') ? mb_substr($tok, 0, 1, 'UTF-8') : substr($tok, 0, 1);
+          $cls = $classify($head);
+          return in_array($cls, ['Digit', 'Other'], TRUE);
+        };
+
+        $poolCjk = [];
+        $poolLat = [];
+        $poolNeutral = [];
+        foreach ($pool as $tok) {
+          if ($isCjkToken($tok)) {
+            $poolCjk[] = $tok;
+          }
+          elseif ($isLatinToken($tok)) {
+            $poolLat[] = $tok;
+          }
+          elseif ($isDigitOrOther($tok)) {
+            $poolNeutral[] = $tok;
+          }
+          else {
+            $poolNeutral[] = $tok;
+          }
+        }
+        // Randomize within groups for variety.
+        if ($poolCjk) {
+          shuffle($poolCjk);
+        }
+        if ($poolLat) {
+          shuffle($poolLat);
+        }
+        if ($poolNeutral) {
+          shuffle($poolNeutral);
+        }
+
+        // Determine UI locale (ja = CJK primary; else Latin primary).
+        $uiLang = '';
+        try {
+          $uiLang = (string) $view->lang();
+        }
+        catch (\Throwable $e) {
+          $uiLang = '';
+        }
+        $primaryGroup = (strpos($uiLang, 'ja') === 0) ? 'cjk' : 'latin';
+
+        // Quotas for 5 outputs (desktop up to 5; tablet/mobile CSS limits):
+        // - First three: 2 primary + 1 other.
+        // - Remaining two: flexible; prefer primary (~3+1 or 4+1).
+        // On mobile (CSS shows 3), users still see 2+1 first.
+        $totalOut = 5;
+        $quotaP = 3;
+        $quotaO = 1;
+
+        $pickFrom = function (array &$arr, int $n): array {
+          $out = [];
+          for ($i = 0; $i < $n && !empty($arr); $i++) {
+            $out[] = array_shift($arr);
+          }
+          return $out;
+        };
+
+        // Prepare group refs based on primary.
+        $primaryRef = ($primaryGroup === 'cjk') ? $poolCjk : $poolLat;
+        $otherRef = ($primaryGroup === 'cjk') ? $poolLat : $poolCjk;
+
+        // Clone arrays for consumption.
+        $pri = $primaryRef;
+        $oth = $otherRef;
+        $neu = $poolNeutral;
+
+        // Determine counts honoring availability.
+        $wantP = min($quotaP, count($pri));
+        $wantO = min($quotaO, count($oth));
+        // If no other-language tokens exist, we cannot satisfy
+        // retention; fill with primary.
+        if ($wantO <= 0) {
+          $wantP = min($quotaP + $quotaO, count($pri));
+          $wantO = 0;
+        }
+        $ordered = [];
+        if ($totalOut >= 1 && $wantP > 0) {
+          $ordered[] = array_shift($pri);
+          $wantP--;
+        }
+        if ($totalOut >= 2 && $wantO > 0) {
+          $ordered[] = array_shift($oth);
+          $wantO--;
+        }
+        if ($totalOut >= 3 && $wantP > 0) {
+          $ordered[] = array_shift($pri);
+          $wantP--;
+        }
+        if ($wantP > 0) {
+          foreach ($pickFrom($pri, $wantP) as $t) {
+            $ordered[] = $t;
+          }
+          $wantP = 0;
+        }
+        if ($wantO > 0) {
+          foreach ($pickFrom($oth, $wantO) as $t) {
+            $ordered[] = $t;
+          }
+          $wantO = 0;
+        }
+        for ($i = count($ordered); $i < $totalOut; $i++) {
+          $added = FALSE;
+          if (!empty($pri)) {
+            $ordered[] = array_shift($pri);
+            $added = TRUE;
+          }
+          elseif (!empty($oth)) {
+            $ordered[] = array_shift($oth);
+            $added = TRUE;
+          }
+          elseif (!empty($neu)) {
+            $ordered[] = array_shift($neu);
+            $added = TRUE;
+          }
+          if (!$added) {
+            break;
+          }
+        }
+
+        // Truncate to totalOut and ensure non-empty unique list.
+        $ordered = array_values(array_unique($ordered));
+        if (count($ordered) > $totalOut) {
+          $ordered = array_slice($ordered, 0, $totalOut);
+        }
+        $exampleTerms = $ordered;
       }
       else {
         $exampleTerms = [];

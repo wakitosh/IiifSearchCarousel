@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.36 - 2025-10-16
+EN:
+- Examples: Increase desktop example keyword count to 5 (tablet 4, mobile 3 via CSS). Maintain locale-aware mix: first three keep the 2+1 guarantee (primary language + other).
+- Stopwords (JA): Add standalone forms "卷" and "巻", plus compound forms "之巻" and "之卷" to the Japanese stopword list. These are now excluded from example keyword candidates.
+- Style: PSR-12 indentation fixes in quota block; view template cap aligned with server output.
+
+JA:
+- 例キーワード: PC 表示の例キーワード数を 5 件へ拡大（タブレットは 4、スマホは 3：CSS で制御）。先頭 3 件の 2+1（主要言語 2 + 他言語 1）の保証は維持。
+- ストップワード（日本語）: 単独の「卷」「巻」、複合の「之巻」「之卷」をストップワードに追加。例キーワードの候補から除外されます。
+- スタイル: 割当ブロックのインデント整備と、テンプレート側の上限をサーバ側出力に合わせて修正。
+
 ## 0.2.35 - 2025-10-15
 EN:
 - Examples: Exclude stopwords across all supported languages (en/ja/de/fr/es/it/la/el) when generating example keywords. Normalizes Latin tokens to lowercase for matching; CJK tokens are matched verbatim.

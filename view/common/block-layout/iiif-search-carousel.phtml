@@ -391,7 +391,7 @@ if ($__hasTrim) {
           return (string) $s;
         };
         foreach ($exampleSource as $t) {
-          if (count($examples) >= 4) break;
+          if (count($examples) >= 5) break;
           $res = $formatExample((string) $t);
           $display = is_array($res) ? (string) ($res['display'] ?? '') : (string) $res;
           $path = is_array($res) ? (string) ($res['path'] ?? 'unknown') : 'unknown';
@@ -404,9 +404,9 @@ if ($__hasTrim) {
             $examples[] = [ 'display' => $display, 'origin' => 'primary', 'path' => $path, 'src' => $srcVal ];
           }
         }
-        // Hard cap to 4 (フォールバック廃止)
-        if (count($examples) > 4) {
-          $examples = array_slice($examples, 0, 4);
+        // Hard cap to 5 (フォールバック廃止)
+        if (count($examples) > 5) {
+          $examples = array_slice($examples, 0, 5);
         }
       ?>
       <?php if (!empty($examples)): ?>
