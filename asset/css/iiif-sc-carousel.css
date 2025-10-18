@@ -1,6 +1,6 @@
 .iiif-sc {
     position: relative;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, .20), 0 12px 28px rgba(0, 0, 0, .24);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
 }
 
 .iiif-sc__bg {
