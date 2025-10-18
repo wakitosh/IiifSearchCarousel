@@ -43,6 +43,7 @@
     border-radius: .25rem;
     color: #fff;
     box-sizing: border-box;
+    font-size: 14px;
 }
 
 .iiif-sc__overlay {
@@ -68,6 +69,7 @@
     align-items: flex-start !important;
     flex-wrap: wrap;
     flex-direction: column;
+    border: 1px solid rgba(0, 0, 0, .12);
     box-shadow: 0 3px 10px rgba(0, 0, 0, .20), 0 12px 28px rgba(0, 0, 0, .24);
 }
 
