@@ -43,7 +43,6 @@
     border-radius: .25rem;
     color: #fff;
     box-sizing: border-box;
-    font-size: 0.9rem;
 }
 
 .iiif-sc__overlay {
@@ -400,6 +399,7 @@
         max-width: calc(100% - 2rem);
         overflow-wrap: anywhere;
         word-break: break-word;
+        font-size: 0.9rem;
     }
 
     /* Ensure flex container can shrink children properly */
