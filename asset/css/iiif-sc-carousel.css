@@ -1,5 +1,6 @@
 .iiif-sc {
     position: relative;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .20), 0 12px 28px rgba(0, 0, 0, .24);
 }
 
 .iiif-sc__bg {
@@ -30,11 +31,6 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    /* Add subtle frame and depth */
-    box-sizing: border-box;
-    border: 1px solid rgba(0, 0, 0, .08);
-    /* Stronger, layered shadow for depth */
-    box-shadow: 0 3px 10px rgba(0, 0, 0, .20), 0 12px 28px rgba(0, 0, 0, .24);
 }
 
 .iiif-sc__caption {
@@ -71,6 +67,7 @@
     align-items: flex-start !important;
     flex-wrap: wrap;
     flex-direction: column;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .20), 0 12px 28px rgba(0, 0, 0, .24);
 }
 
 /* Prevent line breaks between radio and label text */
