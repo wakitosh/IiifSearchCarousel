@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.37 - 2025-10-24
+EN:
+- Example keywords: Add per-language quotas for CJK vs Latin example counts with 0–5 bounds. Defaults: JA sites 4 CJK + 1 Latin; EN/other sites 1 CJK + 4 Latin. The server now splits candidates into CJK/Latin and selects according to these quotas.
+- Mobile-first ordering: When the visible total is limited (e.g., mobile shows the first 3), the smaller category appears first, then the other fills the remaining. If a category lacks enough candidates, the other category backfills; neutrals may fill as a last resort.
+- Settings: Four numeric options added to the module settings. No per-block override for counts at this time; blocks inherit module settings.
+
+JA:
+- 例キーワード: CJK と Latin の件数をサイト言語ごとに 0〜5 の範囲で設定可能にしました。既定は JA: CJK 4 + Latin 1、EN/その他: CJK 1 + Latin 4。候補は CJK/Latin に分割し、設定に沿って選択します。
+- モバイル優先の並び: 表示件数が少ない環境（例: モバイルは先頭3件）では、件数の少ないカテゴリ（CJK/Latin）の方を先に出し、残りをもう一方で埋めます。どちらかが不足する場合は他方で補完し、最終手段として Neutral を利用することがあります。
+- 設定: モジュール設定に数値項目を4つ追加。現時点ではブロック単位の上書きはなく、ブロックはモジュール設定を継承します。
+
 ## 0.2.36 - 2025-10-16
 EN:
 - Examples: Increase desktop example keyword count to 5 (tablet 4, mobile 3 via CSS). Maintain locale-aware mix: first three keep the 2+1 guarantee (primary language + other).

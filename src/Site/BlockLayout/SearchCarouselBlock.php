@@ -406,7 +406,7 @@ class SearchCarouselBlock extends AbstractBlockLayout {
           shuffle($poolNeutral);
         }
 
-        // Determine UI locale (ja = CJK primary; else Latin primary).
+        // Determine UI locale and configured quotas (per-language).
         $uiLang = '';
         try {
           $uiLang = (string) $view->lang();
@@ -414,90 +414,106 @@ class SearchCarouselBlock extends AbstractBlockLayout {
         catch (\Throwable $e) {
           $uiLang = '';
         }
-        $primaryGroup = (strpos($uiLang, 'ja') === 0) ? 'cjk' : 'latin';
-
-        // Quotas for 5 outputs (desktop up to 5; tablet/mobile CSS limits):
-        // - First three: 2 primary + 1 other.
-        // - Remaining two: flexible; prefer primary (~3+1 or 4+1).
-        // On mobile (CSS shows 3), users still see 2+1 first.
-        $totalOut = 5;
-        $quotaP = 3;
-        $quotaO = 1;
-
-        $pickFrom = function (array &$arr, int $n): array {
-          $out = [];
-          for ($i = 0; $i < $n && !empty($arr); $i++) {
-            $out[] = array_shift($arr);
+        // Read settings with defaults and clamp to 0..5.
+        $clamp05 = function (int $n): int {
+          if ($n < 0) {
+            return 0;
           }
-          return $out;
+          if ($n > 5) {
+            return 5;
+          }
+          return $n;
         };
+        $cfgJaCjk = $clamp05((int) ($settings->get('iiif_sc.example_count_ja_cjk') ?? 4));
+        $cfgJaLat = $clamp05((int) ($settings->get('iiif_sc.example_count_ja_latin') ?? 1));
+        $cfgEnCjk = $clamp05((int) ($settings->get('iiif_sc.example_count_en_cjk') ?? 1));
+        $cfgEnLat = $clamp05((int) ($settings->get('iiif_sc.example_count_en_latin') ?? 4));
 
-        // Prepare group refs based on primary.
-        $primaryRef = ($primaryGroup === 'cjk') ? $poolCjk : $poolLat;
-        $otherRef = ($primaryGroup === 'cjk') ? $poolLat : $poolCjk;
+        $cfgCjk = (strpos($uiLang, 'ja') === 0) ? $cfgJaCjk : $cfgEnCjk;
+        $cfgLat = (strpos($uiLang, 'ja') === 0) ? $cfgJaLat : $cfgEnLat;
 
-        // Clone arrays for consumption.
-        $pri = $primaryRef;
-        $oth = $otherRef;
+        // Desired total is the sum of quotas, capped at 5.
+        $totalDesired = $cfgCjk + $cfgLat;
+        if ($totalDesired > 5) {
+          $totalDesired = 5;
+        }
+
+        $cjk = $poolCjk;
+        $lat = $poolLat;
         $neu = $poolNeutral;
 
-        // Determine counts honoring availability.
-        $wantP = min($quotaP, count($pri));
-        $wantO = min($quotaO, count($oth));
-        // If no other-language tokens exist, we cannot satisfy
-        // retention; fill with primary.
-        if ($wantO <= 0) {
-          $wantP = min($quotaP + $quotaO, count($pri));
-          $wantO = 0;
-        }
-        $ordered = [];
-        if ($totalOut >= 1 && $wantP > 0) {
-          $ordered[] = array_shift($pri);
-          $wantP--;
-        }
-        if ($totalOut >= 2 && $wantO > 0) {
-          $ordered[] = array_shift($oth);
-          $wantO--;
-        }
-        if ($totalOut >= 3 && $wantP > 0) {
-          $ordered[] = array_shift($pri);
-          $wantP--;
-        }
-        if ($wantP > 0) {
-          foreach ($pickFrom($pri, $wantP) as $t) {
-            $ordered[] = $t;
+        // Initial wants limited by availability.
+        $takeCjk = min($cfgCjk, count($cjk));
+        $takeLat = min($cfgLat, count($lat));
+
+        // If short of the desired total, fill from the other group first,
+        // then from neutrals.
+        $missing = $totalDesired - ($takeCjk + $takeLat);
+        while ($missing > 0) {
+          $filled = FALSE;
+          if (count($cjk) > $takeCjk && ($takeCjk < $cfgCjk || $takeLat >= count($lat))) {
+            $takeCjk++;
+            $missing--;
+            $filled = TRUE;
           }
-          $wantP = 0;
-        }
-        if ($wantO > 0) {
-          foreach ($pickFrom($oth, $wantO) as $t) {
-            $ordered[] = $t;
+          elseif (count($lat) > $takeLat) {
+            $takeLat++;
+            $missing--;
+            $filled = TRUE;
           }
-          $wantO = 0;
-        }
-        for ($i = count($ordered); $i < $totalOut; $i++) {
-          $added = FALSE;
-          if (!empty($pri)) {
-            $ordered[] = array_shift($pri);
-            $added = TRUE;
+          elseif (count($neu) > 0) {
+            // Use a neutral only if both primary groups are exhausted.
+            // We'll append it after the two groups below.
+            $missing--;
+            $filled = TRUE;
+            // Store neutral count in a local var to add later.
+            // Use a static to avoid uninitialized warnings in phpstan.
+            // We'll initialize right before consumption.
+            $neuExtra = isset($neuExtra) ? ($neuExtra + 1) : 1;
           }
-          elseif (!empty($oth)) {
-            $ordered[] = array_shift($oth);
-            $added = TRUE;
-          }
-          elseif (!empty($neu)) {
-            $ordered[] = array_shift($neu);
-            $added = TRUE;
-          }
-          if (!$added) {
+          if (!$filled) {
             break;
           }
         }
 
-        // Truncate to totalOut and ensure non-empty unique list.
+        // Order examples so that on mobile (first 3 visible), the smaller
+        // category appears first, then the other fills the remaining.
+        $firstIsCjk = FALSE;
+        if ($takeCjk === $takeLat) {
+          // Tie-breaker: prefer the group with fewer available tokens.
+          $firstIsCjk = (count($cjk) <= count($lat));
+        }
+        else {
+          $firstIsCjk = ($takeCjk < $takeLat);
+        }
+
+        $ordered = [];
+        $pushFrom = function (array &$arr, int $n) use (&$ordered) {
+          for ($i = 0; $i < $n && !empty($arr); $i++) {
+            $ordered[] = array_shift($arr);
+          }
+        };
+
+        if ($firstIsCjk) {
+          $pushFrom($cjk, $takeCjk);
+          $pushFrom($lat, $takeLat);
+        }
+        else {
+          $pushFrom($lat, $takeLat);
+          $pushFrom($cjk, $takeCjk);
+        }
+        // Append any neutral extras computed above.
+        $nExtra = isset($neuExtra) ? (int) $neuExtra : 0;
+        if ($nExtra > 0 && !empty($neu)) {
+          for ($i = 0; $i < $nExtra && !empty($neu); $i++) {
+            $ordered[] = array_shift($neu);
+          }
+        }
+
+        // Ensure uniqueness and cap to desired total (<=5).
         $ordered = array_values(array_unique($ordered));
-        if (count($ordered) > $totalOut) {
-          $ordered = array_slice($ordered, 0, $totalOut);
+        if (count($ordered) > $totalDesired) {
+          $ordered = array_slice($ordered, 0, $totalDesired);
         }
         $exampleTerms = $ordered;
       }

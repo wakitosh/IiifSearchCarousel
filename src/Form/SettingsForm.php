@@ -226,6 +226,46 @@ class SettingsForm extends Form {
       'attributes' => ['min' => 2, 'max' => 32, 'step' => 1],
     ]);
 
+    // Per-language quotas for example keywords (CJK vs Latin)
+    // shown in the overlay. Range 0–5 each.
+    // Desktop shows up to 5 examples; mobile shows the first 3.
+    $this->add([
+      'name' => 'example_count_ja_cjk',
+      'type' => Number::class,
+      'options' => [
+        'label' => $tr('Example keywords (JA site): CJK count'),
+        'info' => $tr('Number of CJK examples to select when the site language is Japanese. Range: 0–5. Default: 4.'),
+      ],
+      'attributes' => ['min' => 0, 'max' => 5, 'step' => 1],
+    ]);
+    $this->add([
+      'name' => 'example_count_ja_latin',
+      'type' => Number::class,
+      'options' => [
+        'label' => $tr('Example keywords (JA site): Latin count'),
+        'info' => $tr('Number of Latin examples to select when the site language is Japanese. Range: 0–5. Default: 1.'),
+      ],
+      'attributes' => ['min' => 0, 'max' => 5, 'step' => 1],
+    ]);
+    $this->add([
+      'name' => 'example_count_en_cjk',
+      'type' => Number::class,
+      'options' => [
+        'label' => $tr('Example keywords (EN/other site): CJK count'),
+        'info' => $tr('Number of CJK examples to select when the site language is English or others. Range: 0–5. Default: 1.'),
+      ],
+      'attributes' => ['min' => 0, 'max' => 5, 'step' => 1],
+    ]);
+    $this->add([
+      'name' => 'example_count_en_latin',
+      'type' => Number::class,
+      'options' => [
+        'label' => $tr('Example keywords (EN/other site): Latin count'),
+        'info' => $tr('Number of Latin examples to select when the site language is English or others. Range: 0–5. Default: 4.'),
+      ],
+      'attributes' => ['min' => 0, 'max' => 5, 'step' => 1],
+    ]);
+
     // Auto rebuild (poor-man's cron on visit)
     $this->add([
       'name' => 'auto_rebuild_enable',

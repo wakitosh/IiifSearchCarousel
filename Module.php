@@ -113,6 +113,11 @@ SQL;
       'truncate_title_length' => (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0),
     // Module-wide defaults for example keywords.
       'cjk_max_len' => (int) ($settings->get('iiif_sc.cjk_max_len') ?? 8),
+      // Per-language quotas (defaults: JA 4/1, EN/other 1/4)
+      'example_count_ja_cjk' => (int) ($settings->get('iiif_sc.example_count_ja_cjk') ?? 4),
+      'example_count_ja_latin' => (int) ($settings->get('iiif_sc.example_count_ja_latin') ?? 1),
+      'example_count_en_cjk' => (int) ($settings->get('iiif_sc.example_count_en_cjk') ?? 1),
+      'example_count_en_latin' => (int) ($settings->get('iiif_sc.example_count_en_latin') ?? 4),
       'manifest_urls' => (string) ($settings->get('iiif_sc.manifest_urls') ?? ''),
       'auto_rebuild_enable' => (bool) ($settings->get('iiif_sc.auto_rebuild_enable') ?? FALSE),
       'auto_rebuild_interval' => (int) ($settings->get('iiif_sc.auto_rebuild_interval') ?? 60),
@@ -155,6 +160,21 @@ SQL;
     $settings->set('iiif_sc.truncate_title_length', $getInt('truncate_title_length', 0));
     // Module-wide defaults for example keywords.
     $settings->set('iiif_sc.cjk_max_len', $getInt('cjk_max_len', 8));
+    // Per-language quotas for example keywords (clamped 0..5)
+    $clamp05 = function ($v) {
+      $n = (int) $v;
+      if ($n < 0) {
+        $n = 0;
+      }
+      if ($n > 5) {
+        $n = 5;
+      }
+      return $n;
+    };
+    $settings->set('iiif_sc.example_count_ja_cjk', $clamp05($post['example_count_ja_cjk'] ?? 4));
+    $settings->set('iiif_sc.example_count_ja_latin', $clamp05($post['example_count_ja_latin'] ?? 1));
+    $settings->set('iiif_sc.example_count_en_cjk', $clamp05($post['example_count_en_cjk'] ?? 1));
+    $settings->set('iiif_sc.example_count_en_latin', $clamp05($post['example_count_en_latin'] ?? 4));
     $settings->set('iiif_sc.manifest_urls', $getStr('manifest_urls', ''));
     $settings->set('iiif_sc.auto_rebuild_enable', !empty($post['auto_rebuild_enable']));
     $settings->set('iiif_sc.auto_rebuild_interval', $getInt('auto_rebuild_interval', 60));
