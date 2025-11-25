@@ -138,6 +138,21 @@ if ($__hasTrim) {
     <?php endforeach; ?>
   </div>
 
+  <?php if (count($rows) > 1): ?>
+    <div class="iiif-sc__dots" role="tablist" aria-label="Carousel navigation">
+      <?php foreach ($rows as $i => $r): ?>
+        <button
+          type="button"
+          class="iiif-sc__dot<?php if ($i === 0) echo ' is-active'; ?>"
+          data-index="<?php echo (int) $i; ?>"
+          role="tab"
+          aria-label="Slide <?php echo (int) ($i + 1); ?>"
+          aria-selected="<?php echo $i === 0 ? 'true' : 'false'; ?>">
+        </button>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
   <?php if (!empty($showSearch)): ?>
     <div class="iiif-sc__overlay">
     <form class="iiif-sc__search search-form search-form--inline" method="get" action="<?php echo $searchAction; ?>" aria-label="<?php echo $this->escapeHtml($this->plugin('translate')->__invoke('Carousel search form', 'iiif-search-carousel')); ?>">

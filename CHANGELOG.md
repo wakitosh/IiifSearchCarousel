@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.38 - 2025-10-25
+EN:
+- Carousel navigation: Add dot navigation buttons below the image area, wired to the existing auto-rotation logic and announced via aria-labels so manual selection keeps the slideshow in sync.
+- Style: Override conflicting theme button gradients, move the dots outside the image overlay, and adjust colors/sizing/borders so active/inactive states remain legible on light backgrounds.
+- Layout polish: Keep captions and overlay text unobstructed on mobile by relocating the control group and tuning gaps/shadows for clarity.
+
+JA:
+- カルーセルナビ: 画像領域の下にドットナビゲーションを追加し、既存の自動スライドと同期するよう制御。aria-label 付きボタンで手動操作時もスライイド状態が揃います。
+- スタイル: テーマのボタン装飾を上書きし、ドットを画像オーバーレイの外へ移動。色・サイズ・ボーダーを調整して、明るい背景でもアクティブ/非アクティブが判別しやすいようにしました。
+- レイアウト調整: モバイルでもキャプションやオーバーレイテキストを覆わない配置にし、余白やシャドウを整えて視認性を高めました。
+
 ## 0.2.37 - 2025-10-24
 EN:
 - Example keywords: Add per-language quotas for CJK vs Latin example counts with 0–5 bounds. Defaults: JA sites 4 CJK + 1 Latin; EN/other sites 1 CJK + 4 Latin. The server now splits candidates into CJK/Latin and selects according to these quotas.
