@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.40 - 2026-08-22
+
+EN:
+- Performance: Search-example token refresh now uses stale-while-revalidate. An expired pool is returned immediately while an explicit PHP-CLI Omeka job rebuilds it; on a first-ever cache miss, existing carousel labels temporarily supply the example chips instead of running `ORDER BY RAND()` in the public request.
+- Concurrency: A database advisory lock and a five-minute database-backed lease prevent duplicate dispatches and workers. Lease and cache coordination bypass Omeka's request-local Settings memoization.
+- Privacy and scope: Pool generation now samples only public item titles (`resource = 'items' AND is_public = 1`). A 24-hour hard-stale limit prevents deleted or newly private source titles from remaining visible indefinitely when refreshes fail.
+- Refactor: Tokenization, stopword filtering, cache handling, and pool generation moved from the block renderer into a reusable service and `RefreshTokenPoolJob`.
+
+JA:
+- 性能: 検索例トークンの更新を stale-while-revalidate 方式に変更しました。期限切れ値は即時に返し、明示的な PHP-CLI Omeka ジョブで再生成します。初回キャッシュ未生成時も、公開リクエスト内で `ORDER BY RAND()` を実行せず、既存のカルーセル画像labelを一時的な検索例チップとして表示します。
+- 多重実行防止: DB advisory lock と5分間のDB保存leaseで、ジョブ投入とworkerの重複を防ぎます。leaseとキャッシュの調停では、Omeka Settingsのリクエスト内メモ化を経由しません。
+- 非公開情報保護と対象限定: トークンの生成元を公開アイテムタイトル（`resource = 'items' AND is_public = 1`）だけに限定しました。更新失敗時も、削除済みまたは非公開化されたタイトル由来の語が無期限に残らないよう、stale表示には24時間の上限を設けました。
+- リファクタリング: トークン化、ストップワード除外、キャッシュ処理、プール生成をブロック描画から再利用可能なサービスと `RefreshTokenPoolJob` へ分離しました。
+
 ## 0.2.39 - 2026-08-22
 
 EN:

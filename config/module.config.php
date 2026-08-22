@@ -12,6 +12,7 @@ use Psr\Container\ContainerInterface;
 use IiifSearchCarousel\Controller\Admin\ConfigController;
 use IiifSearchCarousel\Site\BlockLayout\SearchCarouselBlock;
 use IiifSearchCarousel\Form\SettingsForm;
+use IiifSearchCarousel\Service\TokenPool;
 use IiifSearchCarousel\View\Helper\MroongaTokenize;
 
 return [
@@ -30,7 +31,21 @@ return [
   'block_layouts' => [
     'factories' => [
       SearchCarouselBlock::class => function (ContainerInterface $container) {
-        return new SearchCarouselBlock($container);
+        return new SearchCarouselBlock($container, $container->get(TokenPool::class));
+      },
+    ],
+  ],
+
+  'service_manager' => [
+    'factories' => [
+      TokenPool::class => function (ContainerInterface $container) {
+        return new TokenPool(
+          $container->get('Omeka\\Connection'),
+          $container->get('Omeka\\Job\\Dispatcher'),
+          $container->get('Omeka\\Job\\DispatchStrategy\\PhpCli'),
+          $container->get('Omeka\\Logger'),
+          __DIR__ . '/stopwords.json'
+        );
       },
     ],
   ],

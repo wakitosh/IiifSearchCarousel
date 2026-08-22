@@ -16,31 +16,12 @@ use Laminas\Form\Element\MultiCheckbox;
 use Laminas\Form\Element\Checkbox;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use IiifSearchCarousel\Job\RebuildImagesJob;
+use IiifSearchCarousel\Service\TokenPool;
 
 /**
  * Block layout: IIIF Search Carousel.
  */
 class SearchCarouselBlock extends AbstractBlockLayout {
-
-  /**
-   * Cache lifetime for the search example token pool, in seconds.
-   */
-  const TOKEN_POOL_TTL = 3600;
-
-  /**
-   * Number of random titles sampled when rebuilding the pool.
-   */
-  const TOKEN_POOL_TITLES = 300;
-
-  /**
-   * Maximum number of tokens retained in the cached pool.
-   */
-  const TOKEN_POOL_SIZE = 300;
-
-  /**
-   * Number of tokens handed to the renderer on each request.
-   */
-  const POOL_RENDER_SIZE = 32;
   /**
    * Service container.
    *
@@ -48,8 +29,16 @@ class SearchCarouselBlock extends AbstractBlockLayout {
    */
   private $services;
 
-  public function __construct(ContainerInterface $services) {
+  /**
+   * Search-example token pool service.
+   *
+   * @var TokenPool
+   */
+  private $tokenPool;
+
+  public function __construct(ContainerInterface $services, TokenPool $tokenPool) {
     $this->services = $services;
+    $this->tokenPool = $tokenPool;
   }
 
   /**
@@ -133,267 +122,26 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     // Title truncation length (front captions/aria). 0 = no truncation.
     $truncateLen = (int) ($settings->get('iiif_sc.truncate_title_length') ?? 0);
 
-    // Build example keywords from fulltext index with tokenization rules.
-    // Rules: cut at brackets and punctuation,
-    // split when character class changes
-    // (Kanji/Hiragana/Katakana/Latin/Digit). Filter too-short tokens.
-    // Additionally, exclude stopwords across ALL supported languages.
-    // This is independent of the current site UI language, and uses
-    // config/stopwords.json.
+    // Serve a fresh or stale search-example pool immediately. Cache misses
+    // and refreshes are handled by an explicit background PHP-CLI job.
     $exampleTerms = [];
     try {
-      // Detect fulltext_search backend engine to align minimum token length
-      // with the actual searchable threshold (e.g., InnoDB default is 4,
-      // Mroonga often allows 1-2 with n-gram/token filters).
-      $latinMinLen = 4;
-      $digitMinLen = 4;
-      try {
-        $row = $connection->fetchAssociative('SHOW TABLE STATUS LIKE :t', ['t' => 'fulltext_search']);
-        $engine = isset($row['Engine']) ? (string) $row['Engine'] : '';
-        if (strcasecmp($engine, 'Mroonga') === 0) {
-          $latinMinLen = 2;
-          $digitMinLen = 2;
-        }
-      }
-      catch (\Throwable $e) {
-        // Best-effort: keep defaults.
-      }
-      // Helper: classify a single UTF-8 character.
-      $classify = function (string $ch): string {
-        if ($ch === '') {
-          return 'Other';
-        }
-        if (preg_match('/\p{Han}/u', $ch)) {
-          return 'Han';
-        }
-        if (preg_match('/\p{Hiragana}/u', $ch)) {
-          return 'Hira';
-        }
-        if (preg_match('/\p{Katakana}/u', $ch)) {
-          return 'Kata';
-        }
-        if (preg_match('/[A-Za-z]/u', $ch)) {
-          return 'Latin';
-        }
-        if (preg_match('/[0-9]/u', $ch)) {
-          return 'Digit';
-        }
-        return preg_match('/\p{Nd}/u', $ch) ? 'Digit' : 'Other';
-      };
-
-      // Helper: return true if punctuation or separator (spaces etc.).
-      $isSep = function (string $ch): bool {
-        if ($ch === '') {
-          return TRUE;
-        }
-        // Unicode punctuation or separators.
-        $punct = '/[\p{P}\p{Z}]/u';
-        if (preg_match($punct, $ch)) {
-          return TRUE;
-        }
-        // Additional CJK brackets/marks.
-        $marks = '/[（）\(\)［\]【】〈〉《》〔〕｛｝{}＜＞・、。„“‟„「」『』—–‐‑〜]/u';
-        if (preg_match($marks, $ch)) {
-          return TRUE;
-        }
-        return FALSE;
-      };
-
-      // Normalize a token for comparison with stopwords.
-      // For Latin, use lowercase; for others, use verbatim.
-      // Trim surrounding spaces.
-      $normalizeToken = function (string $tok) use ($classify): string {
-        $tok = trim($tok);
-        if ($tok === '') {
-          return '';
-        }
-        $head = function_exists('mb_substr')
-          ? mb_substr($tok, 0, 1, 'UTF-8')
-          : substr($tok, 0, 1);
-        $cls = $classify($head);
-        if ($cls === 'Latin') {
-          if (function_exists('mb_strtolower')) {
-            return mb_strtolower($tok, 'UTF-8');
-          }
-          return strtolower($tok);
-        }
-        return $tok;
-      };
-
-      // Load stopwords.json and build a merged set across all languages.
-      static $stopwordSet = NULL;
-      if ($stopwordSet === NULL) {
-        $stopwordSet = [];
-        $path = __DIR__ . '/../../../config/stopwords.json';
-        try {
-          if (is_readable($path)) {
-            $json = file_get_contents($path);
-            $data = json_decode((string) $json, TRUE);
-            if (is_array($data)) {
-              foreach ($data as $list) {
-                if (!is_array($list)) {
-                  continue;
-                }
-                foreach ($list as $w) {
-                  if (!is_string($w)) {
-                    continue;
-                  }
-                  $nw = $normalizeToken($w);
-                  if ($nw !== '') {
-                    $stopwordSet[$nw] = TRUE;
-                  }
-                }
-              }
-            }
-          }
-        }
-        catch (\Throwable $e) {
-          // If loading fails, just proceed with an empty set.
-          $stopwordSet = [];
-        }
-      }
-      $isStopword = function (string $tok) use ($normalizeToken, $stopwordSet): bool {
-        $nw = $normalizeToken($tok);
-        if ($nw === '') {
-          // Treat empty as stopword-equivalent to ease filtering.
-          return TRUE;
-        }
-        return isset($stopwordSet[$nw]);
-      };
-
-      // Extract tokens from a title according to the rules above.
-      $extractTokens = function (string $title) use ($classify, $isSep, $isStopword, $latinMinLen, $digitMinLen): array {
-        $title = trim($title);
-        if ($title === '') {
-          return [];
-        }
-        // Cut at first bracket entirely.
-        if (preg_match('/[\(\)（）［\]【】〈〉《》〔〕｛｝{}＜＞]/u', $title, $m, PREG_OFFSET_CAPTURE)) {
-          $pos = isset($m[0][1]) ? (int) $m[0][1] : 0;
-          if ($pos > 0) {
-            $title = function_exists('mb_substr') ? mb_substr($title, 0, $pos, 'UTF-8') : substr($title, 0, $pos);
-          }
-        }
-        $len = function_exists('mb_strlen') ? mb_strlen($title, 'UTF-8') : strlen($title);
-        $tokens = [];
-        $buf = '';
-        $prevClass = '';
-        for ($i = 0; $i < $len; $i++) {
-          $ch = function_exists('mb_substr')
-            ? mb_substr($title, $i, 1, 'UTF-8')
-            : substr($title, $i, 1);
-          if ($isSep($ch)) {
-            if ($buf !== '') {
-              $tokens[] = $buf;
-              $buf = '';
-              $prevClass = '';
-            }
-            continue;
-          }
-          $cls = $classify($ch);
-          if ($buf === '') {
-            $buf = $ch;
-            $prevClass = $cls;
-            continue;
-          }
-          if ($cls !== $prevClass) {
-            // Split on character-class boundary.
-            $tokens[] = $buf;
-            $buf = $ch;
-            $prevClass = $cls;
-          }
-          else {
-            $buf .= $ch;
-          }
-        }
-        if ($buf !== '') {
-          $tokens[] = $buf;
-        }
-        // Filter tokens: drop too-short by class, then trim.
-        $out = [];
-        foreach ($tokens as $tok) {
-          $tok = trim($tok);
-          if ($tok === '') {
-            continue;
-          }
-          $head = function_exists('mb_substr')
-            ? mb_substr($tok, 0, 1, 'UTF-8')
-            : substr($tok, 0, 1);
-          $cls = $classify($head);
-          $n = function_exists('mb_strlen') ? mb_strlen($tok, 'UTF-8') : strlen($tok);
-          if (in_array($cls, ['Han', 'Hira', 'Kata'], TRUE)) {
-            if ($n < 2) {
-              // 1文字は弱い。
-              continue;
-            }
-          }
-          elseif ($cls === 'Latin') {
-            if ($n < $latinMinLen) {
-              // 1文字は除外（例: "N"）。
-              continue;
-            }
-          }
-          elseif ($cls === 'Digit') {
-            if ($n < $digitMinLen) {
-              continue;
-            }
-          }
-          else {
-            if ($n < 2) {
-              continue;
-            }
-          }
-          // Exclude stopwords (all languages).
-          if ($isStopword($tok)) {
-            continue;
-          }
-          $out[] = $tok;
-        }
-        return $out;
-      };
-
-      // Token pool for the search examples, cached across requests and
-      // reshuffled here so the displayed examples still vary.
-      $pool = $this->cachedTokenPool($connection, $extractTokens);
+      $pool = $this->tokenPool->getForRender();
       if ($pool) {
         // Locale/device-aware quotas:
         // - Split pool into CJK vs Latin (and neutral)
         // - Select according to UI locale and device class.
-        $isCjkToken = function (string $tok) use ($classify): bool {
-          if ($tok === '') {
-            return FALSE;
-          }
-          $head = function_exists('mb_substr') ? mb_substr($tok, 0, 1, 'UTF-8') : substr($tok, 0, 1);
-          $cls = $classify($head);
-          return in_array($cls, ['Han', 'Hira', 'Kata'], TRUE);
-        };
-        $isLatinToken = function (string $tok) use ($classify): bool {
-          if ($tok === '') {
-            return FALSE;
-          }
-          $head = function_exists('mb_substr') ? mb_substr($tok, 0, 1, 'UTF-8') : substr($tok, 0, 1);
-          return $classify($head) === 'Latin';
-        };
-        $isDigitOrOther = function (string $tok) use ($classify): bool {
-          if ($tok === '') {
-            return TRUE;
-          }
-          $head = function_exists('mb_substr') ? mb_substr($tok, 0, 1, 'UTF-8') : substr($tok, 0, 1);
-          $cls = $classify($head);
-          return in_array($cls, ['Digit', 'Other'], TRUE);
-        };
-
         $poolCjk = [];
         $poolLat = [];
         $poolNeutral = [];
         foreach ($pool as $tok) {
-          if ($isCjkToken($tok)) {
+          if ($this->tokenPool->isCjkToken($tok)) {
             $poolCjk[] = $tok;
           }
-          elseif ($isLatinToken($tok)) {
+          elseif ($this->tokenPool->isLatinToken($tok)) {
             $poolLat[] = $tok;
           }
-          elseif ($isDigitOrOther($tok)) {
+          elseif ($this->tokenPool->isDigitOrOtherToken($tok)) {
             $poolNeutral[] = $tok;
           }
           else {
@@ -916,85 +664,6 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     unset($data['head_bias_decay']);
 
     $block->setData($data);
-  }
-
-  /**
-   * Token pool for the search examples, cached across requests.
-   *
-   * Building the pool needs ORDER BY RAND() over the whole fulltext table,
-   * which sorts every row before discarding all but a handful (0.66 s against
-   * a 2.28 million row index). The examples are decorative, so the pool is
-   * built once per TTL and merely reshuffled on each request.
-   *
-   * @param mixed $connection
-   *   Database connection.
-   * @param callable $extractTokens
-   *   Tokenizer applied to each title.
-   *
-   * @return array
-   *   Up to POOL_RENDER_SIZE tokens, in random order.
-   */
-  private function cachedTokenPool($connection, callable $extractTokens): array {
-    $settings = NULL;
-    try {
-      $settings = $this->services->get('Omeka\\Settings');
-    }
-    catch (\Throwable $e) {
-      $settings = NULL;
-    }
-
-    $ttl = self::TOKEN_POOL_TTL;
-    if ($settings) {
-      try {
-        $override = (int) $settings->get('iiif_sc.token_pool_ttl', 0);
-        if ($override > 0) {
-          $ttl = $override;
-        }
-        $cached = $settings->get('iiif_sc.token_pool');
-        if (is_array($cached) && !empty($cached['tokens']) && isset($cached['time'])
-          && (time() - (int) $cached['time']) < $ttl) {
-          $tokens = (array) $cached['tokens'];
-          shuffle($tokens);
-          return array_slice($tokens, 0, self::POOL_RENDER_SIZE);
-        }
-      }
-      catch (\Throwable $e) {
-        // Fall through and rebuild.
-      }
-    }
-
-    $tokens = [];
-    try {
-      $titles = (array) $connection->fetchFirstColumn(
-        "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' "
-        . "ORDER BY RAND() LIMIT " . (int) self::TOKEN_POOL_TITLES
-      );
-      foreach ($titles as $t) {
-        foreach ($extractTokens((string) $t) as $tok) {
-          if (!in_array($tok, $tokens, TRUE)) {
-            $tokens[] = $tok;
-          }
-          if (count($tokens) >= self::TOKEN_POOL_SIZE) {
-            break 2;
-          }
-        }
-      }
-    }
-    catch (\Throwable $e) {
-      return [];
-    }
-
-    if ($settings && $tokens) {
-      try {
-        $settings->set('iiif_sc.token_pool', ['tokens' => $tokens, 'time' => time()]);
-      }
-      catch (\Throwable $e) {
-        // A failed cache write must not break rendering.
-      }
-    }
-
-    shuffle($tokens);
-    return array_slice($tokens, 0, self::POOL_RENDER_SIZE);
   }
 
 }

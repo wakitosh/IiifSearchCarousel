@@ -62,6 +62,21 @@ These settings control the default behavior and image pool for all carousels. Ac
     - **Enable:** Check to enable automatic image pool rebuilding.
     - **Interval:** Set the minimum interval (in minutes) between automatic rebuilds. This is a "poor-man's cron" triggered on page visits.
 
+### Search Example Token Cache
+
+Search-example tokens are cached for one hour by default. When the cache expires,
+the block immediately serves the stale pool and dispatches an explicit PHP-CLI
+Omeka job to refresh it. On a first-ever cache miss, the token-pool query is
+skipped and example chips are temporarily derived from existing carousel labels
+until that background job completes; the expensive random query is never
+executed in the public request.
+
+The refresh source is limited to public item titles. A database advisory lock and
+a five-minute lease prevent duplicate jobs, and stale tokens are never displayed
+for more than 24 hours. The soft lifetime remains configurable through the global
+setting `iiif_sc.token_pool_ttl` (seconds). The server must support Omeka's
+PHP-CLI job strategy.
+
 ### Block Settings (Site Page Editor)
 
 When you add a "IIIF Search Carousel" block to a site page, you can override or specify settings for that specific instance.
@@ -201,6 +216,19 @@ IIIFマニフェストから取得した画像で構成される全幅の画像�
 - **自動リビルド:**
     - **有効化:** 画像プールの自動リビルドを有効にする場合にチェックします。
     - **間隔:** 自動リビルドを実行する最小間隔（分）を設定します。これはページ訪問時にトリガーされる簡易的なcron機能です。
+
+### 検索例トークンのキャッシュ
+
+検索例トークンは既定で1時間キャッシュします。期限切れ時は古いプールを
+即時に返し、明示的な PHP-CLI Omeka ジョブを投入してバックグラウンド更新します。
+初回キャッシュ未生成時は、ジョブが完了するまで既存のカルーセル画像labelから
+一時的な検索例チップを表示します。公開リクエスト内では重いランダム抽出を
+実行しません。
+
+生成元は公開アイテムのタイトルだけです。DB advisory lock と5分間のleaseで
+ジョブの多重実行を防ぎ、古いトークンの表示には24時間の上限を設けています。
+soft TTLはグローバル設定 `iiif_sc.token_pool_ttl`（秒）で変更できます。
+サーバでOmekaの PHP-CLI ジョブ戦略が利用可能である必要があります。
 
 ### ブロック設定（サイトページ編集画面）
 
