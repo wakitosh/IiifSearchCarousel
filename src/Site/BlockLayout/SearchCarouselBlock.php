@@ -21,6 +21,26 @@ use IiifSearchCarousel\Job\RebuildImagesJob;
  * Block layout: IIIF Search Carousel.
  */
 class SearchCarouselBlock extends AbstractBlockLayout {
+
+  /**
+   * Cache lifetime for the search example token pool, in seconds.
+   */
+  const TOKEN_POOL_TTL = 3600;
+
+  /**
+   * Number of random titles sampled when rebuilding the pool.
+   */
+  const TOKEN_POOL_TITLES = 300;
+
+  /**
+   * Maximum number of tokens retained in the cached pool.
+   */
+  const TOKEN_POOL_SIZE = 300;
+
+  /**
+   * Number of tokens handed to the renderer on each request.
+   */
+  const POOL_RENDER_SIZE = 32;
   /**
    * Service container.
    *
@@ -332,24 +352,9 @@ class SearchCarouselBlock extends AbstractBlockLayout {
         return $out;
       };
 
-      // Collect up to 60 random titles and extract tokens.
-      $sql = "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' ORDER BY RAND() LIMIT 60";
-      $titles = (array) $connection->fetchFirstColumn($sql);
-      $pool = [];
-      foreach ($titles as $t) {
-        foreach ($extractTokens((string) $t) as $tok) {
-          if (!in_array($tok, $pool, TRUE)) {
-            $pool[] = $tok;
-          }
-          if (count($pool) >= 32) {
-            // Keep pool small.
-            break;
-          }
-        }
-        if (count($pool) >= 32) {
-          break;
-        }
-      }
+      // Token pool for the search examples, cached across requests and
+      // reshuffled here so the displayed examples still vary.
+      $pool = $this->cachedTokenPool($connection, $extractTokens);
       if ($pool) {
         // Locale/device-aware quotas:
         // - Split pool into CJK vs Latin (and neutral)
@@ -911,6 +916,85 @@ class SearchCarouselBlock extends AbstractBlockLayout {
     unset($data['head_bias_decay']);
 
     $block->setData($data);
+  }
+
+  /**
+   * Token pool for the search examples, cached across requests.
+   *
+   * Building the pool needs ORDER BY RAND() over the whole fulltext table,
+   * which sorts every row before discarding all but a handful (0.66 s against
+   * a 2.28 million row index). The examples are decorative, so the pool is
+   * built once per TTL and merely reshuffled on each request.
+   *
+   * @param mixed $connection
+   *   Database connection.
+   * @param callable $extractTokens
+   *   Tokenizer applied to each title.
+   *
+   * @return array
+   *   Up to POOL_RENDER_SIZE tokens, in random order.
+   */
+  private function cachedTokenPool($connection, callable $extractTokens): array {
+    $settings = NULL;
+    try {
+      $settings = $this->services->get('Omeka\\Settings');
+    }
+    catch (\Throwable $e) {
+      $settings = NULL;
+    }
+
+    $ttl = self::TOKEN_POOL_TTL;
+    if ($settings) {
+      try {
+        $override = (int) $settings->get('iiif_sc.token_pool_ttl', 0);
+        if ($override > 0) {
+          $ttl = $override;
+        }
+        $cached = $settings->get('iiif_sc.token_pool');
+        if (is_array($cached) && !empty($cached['tokens']) && isset($cached['time'])
+          && (time() - (int) $cached['time']) < $ttl) {
+          $tokens = (array) $cached['tokens'];
+          shuffle($tokens);
+          return array_slice($tokens, 0, self::POOL_RENDER_SIZE);
+        }
+      }
+      catch (\Throwable $e) {
+        // Fall through and rebuild.
+      }
+    }
+
+    $tokens = [];
+    try {
+      $titles = (array) $connection->fetchFirstColumn(
+        "SELECT title FROM fulltext_search WHERE title IS NOT NULL AND title <> '' "
+        . "ORDER BY RAND() LIMIT " . (int) self::TOKEN_POOL_TITLES
+      );
+      foreach ($titles as $t) {
+        foreach ($extractTokens((string) $t) as $tok) {
+          if (!in_array($tok, $tokens, TRUE)) {
+            $tokens[] = $tok;
+          }
+          if (count($tokens) >= self::TOKEN_POOL_SIZE) {
+            break 2;
+          }
+        }
+      }
+    }
+    catch (\Throwable $e) {
+      return [];
+    }
+
+    if ($settings && $tokens) {
+      try {
+        $settings->set('iiif_sc.token_pool', ['tokens' => $tokens, 'time' => time()]);
+      }
+      catch (\Throwable $e) {
+        // A failed cache write must not break rendering.
+      }
+    }
+
+    shuffle($tokens);
+    return array_slice($tokens, 0, self::POOL_RENDER_SIZE);
   }
 
 }

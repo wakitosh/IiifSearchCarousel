@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.39 - 2026-08-22
+
+EN:
+- Performance: Cache the token pool used for the search example chips. Building it required `ORDER BY RAND()` over `fulltext_search`, which assigns a random value to all 2.28 million rows and sorts them before keeping 60 (0.66 s measured). This ran on every page view containing the block.
+- The pool is now rebuilt at most once per hour and merely reshuffled in memory per request, so the examples still vary. The sample size was raised from 60 to 300 titles to widen the vocabulary, which is affordable now that it runs hourly.
+- The lifetime can be adjusted through the global setting `iiif_sc.token_pool_ttl` (seconds), defaulting to 3600. Rendering continues normally if the cache or the query fails.
+
+JA:
+- 性能: 検索例チップ用のトークンプールをキャッシュするようにしました。生成には `fulltext_search` に対する `ORDER BY RAND()` が必要で、227万行すべてに乱数を割り当てて全件ソートしたうえで60件だけを残していました（実測0.66秒）。これがブロックを含むページの表示ごとに実行されていました。
+- プールの再生成は最大でも1時間に1回とし、リクエストごとにはメモリ上でシャッフルして使います。表示される検索例の多様性は維持されます。サンプル件数は60件から300件へ増やし、語彙を広げました。1時間に1回の処理となるためコストは問題になりません。
+- キャッシュ期間はグローバル設定 `iiif_sc.token_pool_ttl`（秒）で変更できます。未設定時は3600秒です。キャッシュの読み書きやクエリが失敗した場合も表示は継続します。
+
 ## 0.2.38 - 2025-10-25
 EN:
 - Carousel navigation: Add dot navigation buttons below the image area, wired to the existing auto-rotation logic and announced via aria-labels so manual selection keeps the slideshow in sync.
