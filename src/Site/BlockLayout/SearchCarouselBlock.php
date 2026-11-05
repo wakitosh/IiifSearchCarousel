@@ -335,7 +335,8 @@ class SearchCarouselBlock extends AbstractBlockLayout {
       'bpMd' => $bpMd,
       'duration' => $duration * 1000,
       'blockId' => (int) $block->id(),
-      'customCss' => (string) $block->dataValue('custom_css', ''),
+      // Also applied here so that values saved before this check stay inert.
+      'customCss' => $this->neutralizeStyleEnd((string) $block->dataValue('custom_css', '')),
       'truncateLen' => $truncateLen,
       'resourceTargets' => $resourceTargets,
       'trimTop' => $trimTop,
@@ -590,13 +591,22 @@ class SearchCarouselBlock extends AbstractBlockLayout {
   }
 
   /**
+   * Keep custom CSS from closing its <style> element.
+   *
+   * The HTML parser ends a style element at "</style" in any letter case, and
+   * this text is printed unescaped, so the match must ignore case.
+   */
+  private function neutralizeStyleEnd(string $css): string {
+    return (string) preg_replace('~</style~i', '</ sty_le', $css);
+  }
+
+  /**
    * {@inheritDoc}
    */
   public function onHydrate(SitePageBlock $block, ErrorStore $errorStore) {
     $data = $block->getData() ?: [];
     if (isset($data['custom_css']) && is_string($data['custom_css'])) {
-      // Simple sanitize: neutralize </style> and drop trailing nulls.
-      $css = str_replace(['</style', '</STYLE'], ['</ sty_le', '</ STY_LE'], $data['custom_css']);
+      $css = $this->neutralizeStyleEnd($data['custom_css']);
       // Limit CSS size to 20KB.
       if (strlen($css) > 20 * 1024) {
         $css = substr($css, 0, 20 * 1024);

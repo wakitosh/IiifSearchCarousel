@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.41 - 2026-11-05
+
+EN:
+- Security: Neutralize `</style` in the block's custom CSS in any letter case. Only the all-lowercase and all-uppercase forms were replaced, so a mixed-case closing tag ended the style element and the text after it was parsed as HTML. The check now also runs when rendering, so values saved earlier are covered.
+
+JA:
+- セキュリティ: ブロックのカスタムCSSに含まれる `</style` を、大文字小文字を問わず無害化するようにしました。従来はすべて小文字またはすべて大文字の形しか置換しなかったため、大文字と小文字が混ざった閉じタグでstyle要素が終了し、続く文字列がHTMLとして解釈されていました。表示時にも同じ処理を行うため、保存済みの値にも適用されます。
+
 ## 0.2.40 - 2026-08-22
 
 EN:
