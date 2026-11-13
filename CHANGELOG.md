@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.42 - 2026-11-13
+
+EN:
+- Security: The module's settings page and the image rebuild are now closed to the `site_admin` role. Only `global_admin` was allowed in the code, but Omeka grants `site_admin` every permission unless one is denied explicitly, so the restriction had no effect for that role.
+
+JA:
+- セキュリティ: モジュールの設定画面と画像の再構築を `site_admin` ロールでは使えないようにしました。コード上は `global_admin` だけを許可していましたが、Omeka は明示的に拒否しない限り `site_admin` にすべての権限を与えるため、このロールには制限が効いていませんでした。
+
 ## 0.2.41 - 2026-11-05
 
 EN:
